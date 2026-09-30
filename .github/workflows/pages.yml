@@ -1,6 +1,7 @@
-# 发布 "site/" 目录到 GitHub Pages
+# 发布站点到 GitHub Pages
 # 触发：推送到 main 分支，或在 Actions 页面手动触发（workflow_dispatch）。
-# 产物：site/ 目录原样作为静态站点上传（无构建步骤）。
+# 产物：仓库根目录原样作为静态站点上传（无构建步骤）。
+# 站点文件位于仓库根：index.html / assets/ / data/
 name: Deploy static site to GitHub Pages
 
 on:
@@ -27,15 +28,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate site directory
+      - name: Validate site files
         run: |
           set -euo pipefail
-          if [ ! -f site/index.html ]; then
-            echo "::error::site/index.html 不存在，无法发布。请先确认 builder 已产出 site/ 目录。"
-            exit 1
-          fi
-          echo "site/ 目录内容："
-          find site -type f | sort
+          for f in index.html assets/style.css assets/app.js data/entries.json; do
+            if [ ! -f "$f" ]; then
+              echo "::error::缺少站点文件 $f，无法发布。请先确认 builder 已产出该文件。"
+              exit 1
+            fi
+          done
+          echo "站点根目录内容："
+          find . -path ./.git -prune -o -type f -print | sort
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -43,8 +46,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 只发布 site/ 子目录，仓库其余文件（docs/、README.md、.github/）不进入站点
-          path: site
+          # 发布仓库根目录（站点文件位于根：index.html / assets/ / data/）
+          path: .
 
   deploy:
     name: Deploy to GitHub Pages
