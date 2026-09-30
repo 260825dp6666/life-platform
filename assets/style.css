@@ -1,0 +1,480 @@
+/* ==========================================================================
+   个人生活平台 v1 — 样式表
+   纯静态、零依赖、零外链（系统字体栈 + 内联 data: 图标）。
+   三种日期状态（今日 / 选中 / 有记录）在视觉上互不冲突，且不只靠颜色区分。
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-alt: #f0f2f5;
+  --text: #1f2328;
+  --text-muted: #5b6470;
+  --border: #d5dae0;
+  --border-strong: #9aa4b1;
+
+  --accent: #1f5fd6;
+  --accent-soft: #e8effc;
+  --accent-contrast: #ffffff;
+
+  --today: #b4451f;
+  --today-soft: #fdeee7;
+
+  --danger: #b32020;
+  --danger-soft: #fdeaea;
+
+  --dot: #1f5fd6;
+  --dot-alt: #7a3fd0;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC",
+          "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans CJK SC", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171b;
+    --surface: #1c2026;
+    --surface-alt: #23272e;
+    --text: #e8eaed;
+    --text-muted: #a7b0bb;
+    --border: #363b43;
+    --border-strong: #5a626d;
+
+    --accent: #7aa7f5;
+    --accent-soft: #22304a;
+    --accent-contrast: #0d1117;
+
+    --today: #ffab8a;
+    --today-soft: #3a2620;
+
+    --danger: #ff8b8b;
+    --danger-soft: #3a2020;
+
+    --dot: #7aa7f5;
+    --dot-alt: #c39bf5;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  }
+}
+
+/* ---------------------------------------------------------------- 基础 ---- */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) 0;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* -------------------------------------------------------------- 布局 ---- */
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.month-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-label {
+  min-width: 120px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  appearance: none;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.btn:hover { background: var(--surface-alt); }
+.btn:active { transform: translateY(1px); }
+.btn-ghost {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.calendar-panel,
+.day-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.day-panel { position: sticky; top: 20px; }
+.day-panel:focus { outline: none; }
+.day-panel:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* -------------------------------------------------------------- 日历 ---- */
+
+.calendar-wrap { overflow-x: auto; }
+
+.calendar {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  table-layout: fixed;
+}
+
+.calendar thead th {
+  padding: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.cell {
+  position: relative;
+  padding: 0;
+  vertical-align: top;
+}
+
+/* 日格按钮：可聚焦、可点击，用 border/weight 而非仅颜色区分状态 */
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 62px;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.day:hover { background: var(--surface-alt); border-color: var(--border-strong); }
+
+.day-num { line-height: 1.1; }
+
+/* 有记录：实心圆点（形状）+ 双线边框（不依赖颜色） */
+.day-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.day.has-entry {
+  border-style: double;
+  border-width: 3px;
+  border-color: var(--dot);
+  font-weight: 600;
+}
+
+/* 今日：加粗边框 + 角标（形状，非颜色） */
+.day.is-today { border-color: var(--today); }
+.day.is-today .day-num { font-weight: 800; }
+.day-badge {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--today);
+  background: var(--today-soft);
+  border: 1px solid var(--today);
+  border-radius: 3px;
+}
+
+/* 选中：高对比底色 + 加粗内描边（配合 aria-pressed） */
+.day.is-selected {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent-contrast);
+}
+.day.is-selected .day-dot { background: var(--accent-contrast); }
+
+/* 补位日（上月/下月）：置灰、不可点击 */
+.day.is-outside {
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border-color: var(--border);
+  opacity: .72;
+  cursor: default;
+}
+.day.is-outside .day-dot { display: none; }
+
+.day.is-selected.is-today { border-color: var(--accent); }
+
+/* -------------------------------------------------------------- 图例 ---- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 12px;
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-top: 1px dashed var(--border);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.legend-today {
+  width: 16px; height: 14px;
+  border: 2px solid var(--today);
+  border-radius: 3px;
+}
+.legend-selected {
+  width: 16px; height: 14px;
+  background: var(--accent);
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------ 提示条 ---- */
+
+.failure-slot:empty { display: none; }
+
+.notice {
+  margin-top: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+}
+.notice-error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+.notice p + p { margin-top: 6px; }
+.notice code {
+  font-family: var(--font-mono);
+  font-size: .92em;
+  padding: 1px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------- 记录面板 ---- */
+
+.day-panel-heading {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.day-panel-date {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-panel-hint {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.day-panel-body {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.entries { display: flex; flex-direction: column; gap: 12px; }
+
+.entry {
+  padding: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--dot-alt);
+  border-radius: var(--radius-sm);
+}
+.entry-title {
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.entry-note {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.tag {
+  padding: 1px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.tag::before { content: "#"; opacity: .6; }
+
+.empty-state {
+  padding: 16px 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.empty-state .empty-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.empty-state .empty-hint { display: block; margin-top: 6px; }
+
+/* -------------------------------------------------------------- 页脚 ---- */
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+.footer-hint { color: var(--text-muted); }
+.site-footer.is-error #footer-stats { color: var(--danger); font-weight: 600; }
+
+/* ------------------------------------------------------------ 响应式 ---- */
+
+@media (max-width: 720px) {
+  .app { padding: 14px 12px 28px; }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .day-panel { position: static; }
+
+  .site-header { align-items: flex-start; }
+  .month-label { min-width: 104px; font-size: 16px; }
+
+  .calendar { border-spacing: 2px; }
+  .day { min-height: 48px; font-size: 14px; padding: 4px 1px; }
+  .day-badge { display: none; }
+  .day.is-today .day-num { text-decoration: underline; text-underline-offset: 3px; }
+}
+
+@media (max-width: 400px) {
+  .day { min-height: 42px; font-size: 13px; }
+}
+
+@media print {
+  .month-nav, .footer-hint { display: none; }
+  .calendar-panel, .day-panel { box-shadow: none; }
+}

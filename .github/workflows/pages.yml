@@ -1,0 +1,59 @@
+# 发布 "site/" 目录到 GitHub Pages
+# 触发：推送到 main 分支，或在 Actions 页面手动触发（workflow_dispatch）。
+# 产物：site/ 目录原样作为静态站点上传（无构建步骤）。
+name: Deploy static site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 允许 GITHUB_TOKEN 执行 Pages 部署所需的操作
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个 Pages 部署；排队中的部署被新推送取消，但进行中的部署不打断
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Upload site artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate site directory
+        run: |
+          set -euo pipefail
+          if [ ! -f site/index.html ]; then
+            echo "::error::site/index.html 不存在，无法发布。请先确认 builder 已产出 site/ 目录。"
+            exit 1
+          fi
+          echo "site/ 目录内容："
+          find site -type f | sort
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 只发布 site/ 子目录，仓库其余文件（docs/、README.md、.github/）不进入站点
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

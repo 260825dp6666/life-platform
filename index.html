@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>个人生活平台 · 日历与每日记录</title>
+  <meta name="description" content="个人生活平台 v1：月历视图 + 每日记录只读展示，纯静态、零依赖。">
+  <link rel="icon" href="data:,">
+  <!-- 相对路径铁律：必须以 ./ 开头，保证在 GitHub Pages 子路径 /<repo>/ 下正常加载 -->
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#day-panel">跳到当日记录</a>
+
+  <div class="app">
+    <header class="site-header">
+      <h1 class="site-title">个人生活平台</h1>
+      <div class="month-nav" role="group" aria-label="月份切换">
+        <button type="button" id="prev-month" class="btn" aria-label="上一月">‹ 上月</button>
+        <p class="month-label" id="month-label" aria-live="polite">—</p>
+        <button type="button" id="next-month" class="btn" aria-label="下一月">下月 ›</button>
+        <button type="button" id="today-btn" class="btn btn-ghost" aria-label="回到今天所在月份">回到今天</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="calendar-panel" aria-labelledby="calendar-heading">
+        <h2 class="visually-hidden" id="calendar-heading">月历</h2>
+
+        <div class="calendar-wrap">
+          <table class="calendar" id="calendar">
+            <caption class="visually-hidden" id="calendar-caption">月历</caption>
+            <thead>
+              <tr>
+                <th scope="col" abbr="星期日">日</th>
+                <th scope="col" abbr="星期一">一</th>
+                <th scope="col" abbr="星期二">二</th>
+                <th scope="col" abbr="星期三">三</th>
+                <th scope="col" abbr="星期四">四</th>
+                <th scope="col" abbr="星期五">五</th>
+                <th scope="col" abbr="星期六">六</th>
+              </tr>
+            </thead>
+            <tbody id="calendar-body"></tbody>
+          </table>
+          <noscript>
+            <p class="notice notice-error">当前浏览器禁用了 JavaScript，无法渲染月历与记录面板。</p>
+          </noscript>
+        </div>
+
+        <p class="legend">
+          <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>有记录</span>
+          <span class="legend-item"><span class="legend-today" aria-hidden="true"></span>今日</span>
+          <span class="legend-item"><span class="legend-selected" aria-hidden="true"></span>已选中</span>
+        </p>
+        <p class="failure-slot" id="failure-slot"></p>
+      </section>
+
+      <aside class="day-panel" id="day-panel" tabindex="-1" aria-labelledby="day-panel-heading">
+        <h2 class="day-panel-heading" id="day-panel-heading">记录</h2>
+        <p class="day-panel-date" id="day-panel-date">—</p>
+        <div class="day-panel-body" id="day-panel-body"></div>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span id="footer-stats">正在加载数据…</span>
+      <a class="footer-hint" href="./README.md">如何新增记录 / 如何发布</a>
+    </footer>
+  </div>
+
+  <script src="./assets/app.js"></script>
+</body>
+</html>
