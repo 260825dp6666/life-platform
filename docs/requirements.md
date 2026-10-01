@@ -199,9 +199,10 @@ v1 采用**手工编辑 JSON 文件**的方式新增记录，流程如下（READ
 7. **数据处理**：`data/entries.json` 是静态资源，会被当作数据文件直接返回，无需特殊配置。
 8. **发布流程（写入 README）**：
    - 推送到 GitHub 仓库的 `main` 分支；
-   - 仓库 Settings → Pages → Source 选择 `Deploy from a branch`，Branch 选 `main`，目录选 `/ (root)`；
+   - 仓库 Settings → Pages → Source 选择 **`GitHub Actions`**（仓库内已提供 `.github/workflows/pages.yml`，推送后自动构建部署）；
    - 等待 1–3 分钟，访问 `https://<user>.github.io/<repo>/`；
-   - 若 404，依次检查：Pages 是否已启用、是否访问了带仓库名前缀的完整路径、文件名大小写是否一致、资源路径是否误用了绝对路径。
+   - 若 404，依次检查：Pages 是否已启用、Source 是否选为 GitHub Actions、是否访问了带仓库名前缀的完整路径、文件名大小写是否一致、资源路径是否误用了绝对路径。
+   - **仓库可见性**：仓库必须是 **Public**，或账号具备 GitHub Pro/Team/Enterprise（私有仓库发布 Pages 需付费计划）；否则 Actions 的 `Configure Pages` 步骤会失败。
 9. **缓存**：Pages 会缓存静态资源，更新数据后如看不到变化，使用强制刷新（Ctrl+F5）。README 需说明这一点。
 
 ---

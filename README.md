@@ -188,12 +188,14 @@ https://<your-username>.github.io/<your-repo>/
 ### 4.4 遇到 404 时的排查顺序
 
 1. Pages 是否已经开启（Settings → Pages 有绿色成功提示）；
-2. 是否访问了**带仓库名前缀的完整路径**（个人站是 `/<repo>/`，不要访问域名根）；
-3. Actions 的最近一次运行是否成功（红色的 ✗ 点进去看日志）；
-4. 文件名**大小写**是否一致（Pages 跑在大小写敏感的文件系统上，`Data/Entries.json` ≠ `data/entries.json`）；
-5. 资源路径是否误用了**绝对路径**（`/assets/style.css` 会指向域名根导致 404，
+2. **仓库可见性**：私有仓库发布 Pages 需要 GitHub **Pro/Team/Enterprise**；免费账号必须把仓库设为 **Public**，
+   否则 Actions 里 `Configure Pages` 这一步会直接失败（表现为整个 workflow 红色 ✗）；
+3. 是否访问了**带仓库名前缀的完整路径**（个人站是 `/<repo>/`，不要访问域名根）；
+4. Actions 的最近一次运行是否成功（红色的 ✗ 点进去看日志）；
+5. 文件名**大小写**是否一致（Pages 跑在大小写敏感的文件系统上，`Data/Entries.json` ≠ `data/entries.json`）；
+6. 资源路径是否误用了**绝对路径**（`/assets/style.css` 会指向域名根导致 404，
    必须写成相对路径 `./assets/style.css`）；
-6. 部署刚完成时 CDN 可能还没刷新，等 1 分钟再用**无痕窗口**试。
+7. 部署刚完成时 CDN 可能还没刷新，等 1 分钟再用**无痕窗口**试。
 
 ---
 
