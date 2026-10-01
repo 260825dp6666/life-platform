@@ -427,6 +427,21 @@
 
     var note = typeof raw.note === 'string' ? raw.note : '';
 
+    // reportUrl：可选的完整复盘报告链接（站点内相对路径，必须以 ./ 开头）。
+    // 只接受「./ 开头的相对路径」或「https:// 开头的绝对地址」，拒绝 javascript: 等其它协议，
+    // 也拒绝 //host 形式的协议相对地址（会跳到站外，且 Pages 子路径下不可控）。
+    var reportUrl = null;
+    if (typeof raw.reportUrl === 'string') {
+      var u = raw.reportUrl.trim();
+      if (/^\.\/[^\s]*$/.test(u) || /^https:\/\/[^\s]+$/.test(u)) reportUrl = u;
+      else if (u) {
+        console.warn(
+          '[life-platform] finance 第 ' + index + ' 条的 reportUrl 已忽略（仅允许 ./ 或 https:// 开头）：' +
+          JSON.stringify(raw.reportUrl)
+        );
+      }
+    }
+
     var tags = [];
     if (Array.isArray(raw.tags)) {
       for (var k = 0; k < raw.tags.length && tags.length < MAX_TAGS; k++) {
@@ -447,6 +462,7 @@
       pnlPct: pnlPct,
       actions: actions,
       note: note.slice(0, MAX_NOTE),
+      reportUrl: reportUrl,
       tags: tags
     };
   }
@@ -1095,7 +1111,32 @@
       back.href = '#/calendar/' + review.date;
       back.textContent = '在日历中查看这一天 →';
       row.appendChild(back);
+
+      if (review.reportUrl) {
+        var open = document.createElement('a');
+        open.className = 'btn btn-ghost';
+        open.href = review.reportUrl;
+        open.target = '_blank';
+        // noopener/noreferrer：新标签页不得通过 window.opener 反控本站页面
+        open.rel = 'noopener noreferrer';
+        open.textContent = '查看完整持仓复盘 ↗';
+        open.setAttribute('aria-label', '在新窗口打开 ' + review.date + ' 的完整持仓复盘报告');
+        row.appendChild(open);
+      }
+
       card.appendChild(row);
+    } else if (review.reportUrl) {
+      var row2 = document.createElement('div');
+      row2.className = 'review-actions-row';
+      var open2 = document.createElement('a');
+      open2.className = 'btn btn-ghost';
+      open2.href = review.reportUrl;
+      open2.target = '_blank';
+      open2.rel = 'noopener noreferrer';
+      open2.textContent = '查看完整持仓复盘 ↗';
+      open2.setAttribute('aria-label', '在新窗口打开 ' + review.date + ' 的完整持仓复盘报告');
+      row2.appendChild(open2);
+      card.appendChild(row2);
     }
 
     return card;
