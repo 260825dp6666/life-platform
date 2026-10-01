@@ -28,6 +28,16 @@
   --dot: #1f5fd6;
   --dot-alt: #7a3fd0;
 
+  /* ---- v1.1 增量：板块导航与理财复盘（见 docs/design-v1.1.md §4） ---- */
+  --finance: #0f6b46;        /* 理财维度主色：与 --dot 蓝、--dot-alt 紫区分，AA 对比达标 */
+  --finance-soft: #e4f2ea;
+  --gain: #b3261e;           /* 盈：中文习惯红涨 */
+  --gain-soft: #fdecea;
+  --loss: #0f6b46;           /* 亏：绿跌 */
+  --loss-soft: #e4f2ea;
+  --reserved: #6b7480;       /* 预留/占位板块 */
+  --reserved-soft: #eef0f3;
+
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
@@ -58,6 +68,16 @@
 
     --dot: #7aa7f5;
     --dot-alt: #c39bf5;
+
+    /* ---- v1.1 增量：暗色主题 ---- */
+    --finance: #6ecfa2;
+    --finance-soft: #17301f;
+    --gain: #ff9a90;
+    --gain-soft: #3a2020;
+    --loss: #6ecfa2;
+    --loss-soft: #17301f;
+    --reserved: #98a1ad;
+    --reserved-soft: #23272e;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, .4);
   }
@@ -139,6 +159,488 @@ a { color: var(--accent); }
   font-size: 22px;
   font-weight: 700;
   letter-spacing: .02em;
+}
+
+/* ==========================================================================
+   v1.1 增量：顶部板块导航 / 首页 / 板块视图 / 理财复盘
+   见 docs/design-v1.1.md §3、§4。以下为纯追加，不改动上方 v1 既有规则。
+   ========================================================================== */
+
+/* ---------------------------------------------------- 顶部一级导航 ---- */
+
+.topnav {
+  flex: 1 1 100%;
+  order: 3;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.topnav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.topnav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.topnav-link:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+  border-color: var(--border);
+}
+
+/* 当前板块：下边框加粗 + 顶部圆点（形状，不只靠颜色）+ aria-current */
+.topnav-link.is-current {
+  color: var(--accent);
+  font-weight: 700;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.topnav-link.is-current::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.topnav-link.is-current::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 3px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.nav-lock {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  color: var(--reserved);
+  background: var(--reserved-soft);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* ---------------------------------------------------- 视图容器 ---- */
+
+.view[hidden] { display: none; }
+
+.view-title {
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.view-title:focus { outline: none; }
+.view-title:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.view-note {
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------- 提示横幅 ---- */
+
+.banner-slot:empty { display: none; }
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-strong);
+  border-left-width: 5px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+}
+.banner-title {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.banner-preview {
+  border-left-color: var(--today);
+  background: var(--today-soft);
+}
+.banner-preview .banner-title { color: var(--today); }
+
+/* ---------------------------------------------------- 首页 ---- */
+
+.home-date {
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+}
+.home-date .home-weekday {
+  display: block;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.home-summary {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.home-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.mini-calendar {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  table-layout: fixed;
+  margin-top: 10px;
+}
+.mini-calendar thead th {
+  padding: 2px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+.mini-calendar td {
+  text-align: center;
+  padding: 0;
+}
+.mini-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 34px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.mini-day.is-outside {
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border-color: var(--border);
+  opacity: .72;
+}
+.mini-day.is-today {
+  border-color: var(--today);
+  border-width: 2px;
+  font-weight: 800;
+}
+.mini-day.has-entry { border-style: double; border-width: 3px; border-color: var(--dot); }
+.mini-day.has-review { border-color: var(--finance); }
+.mini-day.has-entry.has-review { border-color: var(--dot); }
+.mini-mark-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 7px;
+}
+.mini-dot, .mini-tri { display: block; }
+.mini-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+.mini-tri {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid var(--finance);
+}
+
+.mini-legend {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.quick-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ---------------------------------------------------- 维度分组 ---- */
+
+.day-summary-line {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.day-group + .day-group { margin-top: 16px; }
+
+.day-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.day-group-head::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: var(--dot);
+}
+.day-group.is-finance .day-group-head::before {
+  background: var(--finance);
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  width: 10px; height: 9px;
+}
+.day-group-name { flex: 1 1 auto; margin-left: -4px; }
+.day-group-count {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------- 日历双标记 ---- */
+
+.day-mark-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 10px;
+}
+.day-tri {
+  display: block;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 8px solid var(--finance);
+}
+.day.has-review { border-color: var(--finance); }
+.day.has-entry.has-review { border-color: var(--dot); }
+.day.is-outside .day-tri { display: none; }
+
+.legend-tri {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 8px solid var(--finance);
+}
+
+/* ---------------------------------------------------- 盈亏数字 ---- */
+
+.pnl {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pnl-gain { color: var(--gain); }
+.pnl-loss { color: var(--loss); }
+.pnl-flat { color: var(--text-muted); font-weight: 600; }
+.pnl-label {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+
+/* ---------------------------------------------------- 汇总条 ---- */
+
+.summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--finance);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.summary-item { display: flex; flex-direction: column; gap: 2px; }
+.summary-label { font-size: 12px; color: var(--text-muted); letter-spacing: .04em; }
+.summary-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.summary-value.is-large { font-size: 24px; }
+
+/* ---------------------------------------------------- 复盘卡 ---- */
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--finance);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+}
+
+.review-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border);
+}
+.review-card-date {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.review-card-weekday { font-size: 13px; color: var(--text-muted); }
+.review-card-metrics { margin-left: auto; display: flex; gap: 14px; align-items: baseline; }
+
+.review-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 12px 20px;
+  margin-top: 12px;
+}
+.review-block-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.review-actions li {
+  position: relative;
+  padding-left: 16px;
+  overflow-wrap: anywhere;
+}
+.review-actions li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .62em;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--finance);
+}
+.review-note {
+  font-size: 14px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.review-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------- 占位板块 ---- */
+
+.reserved-panel {
+  padding: 22px 18px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  max-width: 640px;
+}
+.reserved-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.badge-reserved {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--reserved);
+  background: var(--reserved-soft);
+  border: 1px solid var(--reserved);
+  border-radius: 999px;
+}
+.reserved-list {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.reserved-list li { position: relative; padding-left: 16px; }
+.reserved-list li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--reserved);
+}
+
+/* ---------------------------------------------------- 全局数据源状态 ---- */
+
+.data-source-line {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .month-nav {
@@ -468,13 +970,32 @@ a { color: var(--accent); }
   .day { min-height: 48px; font-size: 14px; padding: 4px 1px; }
   .day-badge { display: none; }
   .day.is-today .day-num { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---- v1.1：首页单列、复盘卡单列、导航可点区域放大 ---- */
+  .home-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .home-date { font-size: 25px; }
+
+  .review-body { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .review-card-metrics { margin-left: 0; }
+
+  .summary-bar { gap: 10px 20px; padding: 12px; }
+  .summary-value { font-size: 18px; }
+  .summary-value.is-large { font-size: 21px; }
+
+  .topnav-link { padding: 7px 10px; font-size: 14px; }
 }
 
 @media (max-width: 400px) {
   .day { min-height: 42px; font-size: 13px; }
+
+  /* v1.1：极窄屏下日历标记缩小，避免挤压 */
+  .day-tri { border-left-width: 4px; border-right-width: 4px; border-bottom-width: 7px; }
+  .day-mark-row { min-height: 8px; gap: 3px; }
+  .mini-day { min-height: 28px; font-size: 12px; }
 }
 
 @media print {
-  .month-nav, .footer-hint { display: none; }
-  .calendar-panel, .day-panel { box-shadow: none; }
+  .month-nav, .footer-hint, .topnav, .quick-jump { display: none; }
+  .calendar-panel, .day-panel, .home-card, .review-card, .summary-bar { box-shadow: none; }
+  .view[hidden] { display: none !important; }
 }

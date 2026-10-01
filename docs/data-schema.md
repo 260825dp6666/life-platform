@@ -256,3 +256,16 @@ node -e "JSON.parse(require('fs').readFileSync('data/entries.json','utf8'));cons
 | 3（v3 迭代，尚未定义） | 多模块拆分为 `data/habits.json`、`data/health.json`、`data/finance.json`，各自独立 `schemaVersion` | 迁移方案在 v3 阶段单独定义 |
 
 **递增 `schemaVersion` 的触发条件**：删除了既有字段、改变了既有字段的语义或类型、或将可选字段改为必填字段。仅新增可选字段**不**递增版本。
+
+---
+
+## 7. 相关文档（v1.1 增量）
+
+v1.1（多板块 + 理财复盘）**未改动本文档定义的 `entries.json` 格式**，`schemaVersion` 仍为 `1`。
+
+- 新增的数据文件 `data/finance.json`（理财复盘）使用**独立 schema**，字段定义见
+  [`design-v1.1.md`](design-v1.1.md) 第 6.2 节。
+- 页面结构、板块路由、日历双维度标记（圆点 = 生活记录、▲ = 理财复盘）等设计约束见
+  [`design-v1.1.md`](design-v1.1.md)。
+- 本文档第 3 节对 `entries.json` 的所有校验规则**继续有效**，前端对两个数据文件采用同样的
+  「逐条跳过无效数据 + `console.warn` 提示 + 不白屏」容错策略。

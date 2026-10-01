@@ -4,72 +4,266 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>个人生活平台 · 日历与每日记录</title>
-  <meta name="description" content="个人生活平台 v1：月历视图 + 每日记录只读展示，纯静态、零依赖。">
+  <title>个人生活平台 · 日历 / 每日记录 / 理财复盘</title>
+  <meta name="description" content="个人生活平台 v1.1：日历 + 每日记录 + 理财复盘，多板块 hash 路由，纯静态、零依赖。">
   <link rel="icon" href="data:,">
   <!-- 相对路径铁律：必须以 ./ 开头，保证在 GitHub Pages 子路径 /<repo>/ 下正常加载 -->
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-  <a class="skip-link" href="#day-panel">跳到当日记录</a>
+  <a class="skip-link" href="#main">跳到主要内容</a>
 
   <div class="app">
+    <!-- ================================================== 页头 / 一级导航 -->
     <header class="site-header">
       <h1 class="site-title">个人生活平台</h1>
-      <div class="month-nav" role="group" aria-label="月份切换">
-        <button type="button" id="prev-month" class="btn" aria-label="上一月">‹ 上月</button>
-        <p class="month-label" id="month-label" aria-live="polite">—</p>
-        <button type="button" id="next-month" class="btn" aria-label="下一月">下月 ›</button>
-        <button type="button" id="today-btn" class="btn btn-ghost" aria-label="回到今天所在月份">回到今天</button>
-      </div>
+
+      <nav class="topnav" aria-label="主导航">
+        <ul class="topnav-list">
+          <li class="topnav-item"><a class="topnav-link" href="#/home" data-view="home">首页</a></li>
+          <li class="topnav-item"><a class="topnav-link" href="#/calendar" data-view="calendar">日历</a></li>
+          <li class="topnav-item"><a class="topnav-link" href="#/finance" data-view="finance">理财复盘</a></li>
+          <li class="topnav-item">
+            <a class="topnav-link" href="#/habits" data-view="habits" aria-label="习惯打卡（规划中）">
+              习惯打卡<span class="nav-lock" aria-hidden="true">规划中</span>
+            </a>
+          </li>
+          <li class="topnav-item">
+            <a class="topnav-link" href="#/health" data-view="health" aria-label="健康（规划中）">
+              健康<span class="nav-lock" aria-hidden="true">规划中</span>
+            </a>
+          </li>
+          <li class="topnav-item"><a class="topnav-link" href="#/about" data-view="about">关于</a></li>
+        </ul>
+      </nav>
     </header>
 
-    <main class="layout">
-      <section class="calendar-panel" aria-labelledby="calendar-heading">
-        <h2 class="visually-hidden" id="calendar-heading">月历</h2>
+    <!-- ================================================== 全局横幅槽 -->
+    <div class="banner-slot" id="banner-slot"></div>
 
-        <div class="calendar-wrap">
-          <table class="calendar" id="calendar">
-            <caption class="visually-hidden" id="calendar-caption">月历</caption>
-            <thead>
-              <tr>
-                <th scope="col" abbr="星期日">日</th>
-                <th scope="col" abbr="星期一">一</th>
-                <th scope="col" abbr="星期二">二</th>
-                <th scope="col" abbr="星期三">三</th>
-                <th scope="col" abbr="星期四">四</th>
-                <th scope="col" abbr="星期五">五</th>
-                <th scope="col" abbr="星期六">六</th>
-              </tr>
-            </thead>
-            <tbody id="calendar-body"></tbody>
-          </table>
-          <noscript>
-            <p class="notice notice-error">当前浏览器禁用了 JavaScript，无法渲染月历与记录面板。</p>
-          </noscript>
-        </div>
+    <main id="main">
 
-        <p class="legend">
-          <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>有记录</span>
-          <span class="legend-item"><span class="legend-today" aria-hidden="true"></span>今日</span>
-          <span class="legend-item"><span class="legend-selected" aria-hidden="true"></span>已选中</span>
+      <!-- ================================================ 视图：首页 -->
+      <section class="view" id="view-home" hidden aria-labelledby="home-title">
+        <h2 class="view-title" id="view-home-title" tabindex="-1">今日</h2>
+
+        <p class="home-date">
+          <span id="home-date-text">—</span>
+          <span class="home-weekday" id="home-weekday">—</span>
         </p>
-        <p class="failure-slot" id="failure-slot"></p>
+        <p class="home-summary" id="home-summary">正在加载…</p>
+
+        <div class="home-grid">
+          <div class="home-card">
+            <div class="day-group-head">
+              <span class="day-group-name">今日内容</span>
+              <span class="day-group-count" id="home-content-count">—</span>
+            </div>
+            <div id="home-content"></div>
+          </div>
+
+          <div class="home-card">
+            <div class="day-group-head">
+              <span class="day-group-name">本月速览</span>
+              <span class="day-group-count" id="mini-month-label">—</span>
+            </div>
+            <table class="mini-calendar" aria-hidden="true">
+              <thead>
+                <tr>
+                  <th scope="col">一</th>
+                  <th scope="col">二</th>
+                  <th scope="col">三</th>
+                  <th scope="col">四</th>
+                  <th scope="col">五</th>
+                  <th scope="col">六</th>
+                  <th scope="col">日</th>
+                </tr>
+              </thead>
+              <tbody id="mini-calendar-body"></tbody>
+            </table>
+            <p class="mini-legend" id="mini-legend">—</p>
+            <p class="mini-legend">仅作概览，点击请进入完整日历</p>
+            <div class="quick-jump">
+              <a class="btn" href="#/calendar" data-route="calendar" id="home-open-calendar">打开完整日历 →</a>
+              <a class="btn" href="#/finance">进入理财复盘 →</a>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <aside class="day-panel" id="day-panel" tabindex="-1" aria-labelledby="day-panel-heading">
-        <h2 class="day-panel-heading" id="day-panel-heading">记录</h2>
-        <p class="day-panel-date" id="day-panel-date">—</p>
-        <div class="day-panel-body" id="day-panel-body"></div>
-      </aside>
+      <!-- ================================================ 视图：日历 -->
+      <section class="view" id="view-calendar" hidden aria-labelledby="calendar-view-title">
+        <h2 class="view-title" id="view-calendar-title" tabindex="-1">日历</h2>
+
+        <div class="month-nav" role="group" aria-label="月份切换">
+          <button type="button" id="prev-month" class="btn" aria-label="上一月">‹ 上月</button>
+          <p class="month-label" id="month-label" aria-live="polite">—</p>
+          <button type="button" id="next-month" class="btn" aria-label="下一月">下月 ›</button>
+          <button type="button" id="today-btn" class="btn btn-ghost" aria-label="回到今天所在月份">回到今天</button>
+        </div>
+
+        <div class="layout">
+          <div class="calendar-panel">
+            <h3 class="visually-hidden" id="calendar-heading">月历</h3>
+
+            <div class="calendar-wrap">
+              <table class="calendar" id="calendar">
+                <caption class="visually-hidden" id="calendar-caption">月历</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" abbr="星期一">一</th>
+                    <th scope="col" abbr="星期二">二</th>
+                    <th scope="col" abbr="星期三">三</th>
+                    <th scope="col" abbr="星期四">四</th>
+                    <th scope="col" abbr="星期五">五</th>
+                    <th scope="col" abbr="星期六">六</th>
+                    <th scope="col" abbr="星期日">日</th>
+                  </tr>
+                </thead>
+                <tbody id="calendar-body"></tbody>
+              </table>
+              <noscript>
+                <p class="notice notice-error">当前浏览器禁用了 JavaScript，无法渲染月历与记录面板。</p>
+              </noscript>
+            </div>
+
+            <p class="legend">
+              <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>有生活记录</span>
+              <span class="legend-item"><span class="legend-tri" aria-hidden="true"></span>有理财复盘</span>
+              <span class="legend-item"><span class="legend-today" aria-hidden="true"></span>今日</span>
+              <span class="legend-item"><span class="legend-selected" aria-hidden="true"></span>已选中</span>
+            </p>
+            <p class="failure-slot" id="failure-slot"></p>
+          </div>
+
+          <aside class="day-panel" id="day-panel" tabindex="-1" aria-labelledby="day-panel-heading">
+            <h3 class="day-panel-heading" id="day-panel-heading">当日内容</h3>
+            <p class="day-panel-date" id="day-panel-date">—</p>
+            <p class="day-summary-line" id="day-summary-line"></p>
+            <div class="day-panel-body" id="day-panel-body"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ================================================ 视图：理财复盘 -->
+      <section class="view" id="view-finance" hidden aria-labelledby="finance-title">
+        <h2 class="view-title" id="view-finance-title" tabindex="-1">理财复盘</h2>
+        <p class="view-note">
+          数据来源：<code>./data/finance.json</code>（前端只读，手工编辑新增）。
+          字段定义见 <code>docs/design-v1.1.md</code> 第 6.2 节。
+        </p>
+
+        <div class="summary-bar" id="finance-summary"></div>
+
+        <div class="month-nav" role="group" aria-label="复盘月份切换" style="margin-top:14px">
+          <button type="button" id="fin-prev-month" class="btn" aria-label="上一个复盘月份">‹ 上月</button>
+          <p class="month-label" id="fin-month-label" aria-live="polite">—</p>
+          <button type="button" id="fin-next-month" class="btn" aria-label="下一个复盘月份">下月 ›</button>
+          <button type="button" id="fin-reset-month" class="btn btn-ghost" aria-label="回到最近一次复盘所在月份">回到最近</button>
+        </div>
+
+        <div class="review-list" id="finance-list"></div>
+      </section>
+
+      <!-- ================================================ 视图：预留板块 -->
+      <section class="view" id="view-habits" hidden aria-labelledby="habits-title">
+        <h2 class="view-title" id="view-habits-title" tabindex="-1">习惯打卡</h2>
+        <div class="reserved-panel">
+          <p class="reserved-head">
+            习惯打卡
+            <span class="badge-reserved">规划中</span>
+          </p>
+          <p class="view-note" style="margin-top:10px">这一板块还没做。导航项保留在这里，是为了让整个平台的结构一眼可见。</p>
+          <ul class="reserved-list">
+            <li>规划方向：连续打卡天数、完成率、周视图</li>
+            <li>数据计划：<code>./data/habits.json</code>（独立 schema，独立版本号）</li>
+            <li>依赖前提：先把日历与内容面板的复用组件固定下来</li>
+          </ul>
+          <div class="quick-jump">
+            <a class="btn" href="#/calendar">回到日历</a>
+            <a class="btn btn-ghost" href="#/about">看规划说明</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-health" hidden aria-labelledby="health-title">
+        <h2 class="view-title" id="view-health-title" tabindex="-1">健康</h2>
+        <div class="reserved-panel">
+          <p class="reserved-head">
+            健康
+            <span class="badge-reserved">规划中</span>
+          </p>
+          <p class="view-note" style="margin-top:10px">这一板块还没做。导航项保留在这里，是为了让整个平台的结构一眼可见。</p>
+          <ul class="reserved-list">
+            <li>规划方向：体重、睡眠时长、运动频次的每日记录与月度趋势</li>
+            <li>数据计划：<code>./data/health.json</code>（独立 schema）</li>
+            <li>图表在零依赖前提下的做法：原生 SVG（见 requirements 第 7 节 v3）</li>
+          </ul>
+          <div class="quick-jump">
+            <a class="btn" href="#/calendar">回到日历</a>
+            <a class="btn btn-ghost" href="#/about">看规划说明</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================ 视图：关于 -->
+      <section class="view" id="view-about" hidden aria-labelledby="about-title">
+        <h2 class="view-title" id="view-about-title" tabindex="-1">关于</h2>
+
+        <div class="home-grid">
+          <div class="home-card">
+            <div class="day-group-head"><span class="day-group-name">这个站点是什么</span></div>
+            <p class="view-note" style="margin:0">
+              一个纯静态、零依赖、零构建的个人生活平台。所有内容都在仓库里的纯文本文件中，
+              推送即发布，断网可用，没有服务器、没有账号、没有跟踪脚本。
+            </p>
+
+            <div class="day-group-head" style="margin-top:16px"><span class="day-group-name">数据来源</span></div>
+            <ul class="review-actions">
+              <li>生活记录：<code>./data/entries.json</code>（schema v1）</li>
+              <li>理财复盘：<code>./data/finance.json</code>（schema v1，v1.1 新增）</li>
+              <li>前端一律只读，不提供任何新增 / 编辑 / 删除入口</li>
+            </ul>
+
+            <div class="day-group-head" style="margin-top:16px"><span class="day-group-name">怎么新增内容</span></div>
+            <p class="view-note" style="margin:0">
+              手工编辑上面的 JSON 文件 → 保存 → 刷新页面验证 → 提交推送到 GitHub，
+              Pages 会在数分钟内更新。字段与语法说明见
+              <a href="./README.md">README</a> 与
+              <a href="./docs/data-schema.md">docs/data-schema.md</a>。
+            </p>
+          </div>
+
+          <div class="home-card">
+            <div class="day-group-head"><span class="day-group-name">板块蓝图</span></div>
+            <ul class="review-actions">
+              <li>首页 · 日历 · 理财复盘 —— 已可用</li>
+              <li>习惯打卡 · 健康 —— 占位中，结构已就绪</li>
+            </ul>
+
+            <div class="day-group-head" style="margin-top:16px"><span class="day-group-name">文档</span></div>
+            <ul class="review-actions">
+              <li><a href="./docs/design-v1.1.md">docs/design-v1.1.md</a> — 本次页面设计规格</li>
+              <li><a href="./docs/requirements.md">docs/requirements.md</a> — v1 需求与技术方案</li>
+              <li><a href="./docs/data-schema.md">docs/data-schema.md</a> — 数据格式定义</li>
+              <li><a href="./README.md">README.md</a> — 本地打开 / 新增记录 / 发布说明</li>
+            </ul>
+
+            <div class="data-source-line" id="about-version">—</div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
+    <!-- ================================================== 页脚 -->
     <footer class="site-footer">
       <span id="footer-stats">正在加载数据…</span>
       <a class="footer-hint" href="./README.md">如何新增记录 / 如何发布</a>
     </footer>
   </div>
 
+  <script src="./assets/data-samples.js"></script>
   <script src="./assets/app.js"></script>
 </body>
 </html>
