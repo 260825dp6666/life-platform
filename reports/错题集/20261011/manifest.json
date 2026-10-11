@@ -1,0 +1,283 @@
+{
+ "math": [
+  {
+   "file": "math-p01-2.png",
+   "page": 1,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p02-2.png",
+   "page": 2,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p03-2.png",
+   "page": 3,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p04-2.png",
+   "page": 4,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p05-2.png",
+   "page": 5,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p06-2.png",
+   "page": 6,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p07-2.png",
+   "page": 7,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p08-2.png",
+   "page": 8,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p09-2.png",
+   "page": 9,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "math-p10-2.png",
+   "page": 10,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  }
+ ],
+ "phys": [
+  {
+   "file": "phys-p01-0.png",
+   "page": 1,
+   "w": 558,
+   "h": 150,
+   "bytes": 82544
+  },
+  {
+   "file": "phys-p01-1.jpeg",
+   "page": 1,
+   "w": 338,
+   "h": 242,
+   "bytes": 15591
+  },
+  {
+   "file": "phys-p01-4.png",
+   "page": 1,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p02-2.png",
+   "page": 2,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p02-4.jpeg",
+   "page": 2,
+   "w": 411,
+   "h": 241,
+   "bytes": 15084
+  },
+  {
+   "file": "phys-p02-5.jpeg",
+   "page": 2,
+   "w": 137,
+   "h": 161,
+   "bytes": 8959
+  },
+  {
+   "file": "phys-p03-2.png",
+   "page": 3,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p04-2.png",
+   "page": 4,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p05-2.png",
+   "page": 5,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p06-2.png",
+   "page": 6,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p07-2.png",
+   "page": 7,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "phys-p08-2.png",
+   "page": 8,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  }
+ ],
+ "bio": [
+  {
+   "file": "bio-p01-0.png",
+   "page": 1,
+   "w": 595,
+   "h": 528,
+   "bytes": 30376
+  },
+  {
+   "file": "bio-p01-1.png",
+   "page": 1,
+   "w": 1379,
+   "h": 462,
+   "bytes": 134430
+  },
+  {
+   "file": "bio-p01-2.png",
+   "page": 1,
+   "w": 2848,
+   "h": 1408,
+   "bytes": 60320
+  },
+  {
+   "file": "bio-p01-5.png",
+   "page": 1,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p02-2.png",
+   "page": 2,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p03-2.png",
+   "page": 3,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p04-2.png",
+   "page": 4,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p04-4.jpeg",
+   "page": 4,
+   "w": 1114,
+   "h": 2672,
+   "bytes": 938790
+  },
+  {
+   "file": "bio-p05-2.png",
+   "page": 5,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p05-4.jpeg",
+   "page": 5,
+   "w": 1114,
+   "h": 2672,
+   "bytes": 938790
+  },
+  {
+   "file": "bio-p05-5.jpeg",
+   "page": 5,
+   "w": 1013,
+   "h": 562,
+   "bytes": 224501
+  },
+  {
+   "file": "bio-p06-2.png",
+   "page": 6,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "bio-p07-2.png",
+   "page": 7,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  }
+ ],
+ "chem": [
+  {
+   "file": "chem-p01-0.png",
+   "page": 1,
+   "w": 772,
+   "h": 199,
+   "bytes": 127788
+  },
+  {
+   "file": "chem-p01-3.png",
+   "page": 1,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "chem-p02-2.png",
+   "page": 2,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  },
+  {
+   "file": "chem-p03-2.png",
+   "page": 3,
+   "w": 400,
+   "h": 400,
+   "bytes": 9721
+  }
+ ]
+}

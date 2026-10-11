@@ -41,6 +41,7 @@
 
   var WORDS_URL = './data/gaokao/words.json';
   var WRONGS_URL = './data/gaokao/wrongs.json';
+  var WRONG_ARCHIVE_INDEX = './data/gaokao/wrongs_archive.json';
   var GK_STORE_KEY = 'life-platform:gaokao:v1';
   var GK_SYNC_STORE = 'life-platform:gaokao:sync:v1';
   // 云端签到同步地址。未配置时签到仅存本机（原有行为）。
@@ -869,7 +870,11 @@
       fetchJson(WRONGS_URL).then(function (p) {
         gkState.wrongs = (p && Array.isArray(p.subjects)) ? p : null;
         if (!gkState.wrongs) gkState.wrongsErr = '数据格式不符合预期：缺少 subjects 数组。';
-      }, function (err) { gkState.wrongsErr = dataFailureText(WRONGS_URL, normalizeFetchError(err)); })
+      }, function (err) { gkState.wrongsErr = dataFailureText(WRONGS_URL, normalizeFetchError(err)); }),
+      // 归档清单独立加载：失败不影响错题主体
+      fetchJson(WRONG_ARCHIVE_INDEX).then(function (p) {
+        gkState.archive = (p && Array.isArray(p.archives)) ? p.archives : [];
+      }, function () { gkState.archive = []; })
     ];
     return Promise.all(tasks);
   }
@@ -1843,6 +1848,45 @@
         op.textContent = gkState.wrongs.subjects[si].name;
         wrongFormSubject.appendChild(op);
       }
+    }
+
+    renderGkArchive();
+  }
+
+  /** 按日期归档的错题集（由导出脚本写入 manifest） */
+  function renderGkArchive() {
+    var box = document.getElementById('gk-wrong-archive');
+    if (!box) return;
+    box.innerHTML = '';
+    var list = Array.isArray(gkState.archive) ? gkState.archive : [];
+    if (!list.length) {
+      box.appendChild(buildEmptyState('还没有按日期归档', '导出错题本后按日期收纳，会显示在这里。'));
+      return;
+    }
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      var row = document.createElement('a');
+      row.className = 'wrong-archive-item';
+      row.href = a.href;
+      row.target = '_blank';
+      row.rel = 'noopener noreferrer';
+
+      var d = document.createElement('span');
+      d.className = 'wrong-archive-date';
+      d.textContent = a.date;
+      row.appendChild(d);
+
+      var m = document.createElement('span');
+      m.className = 'wrong-archive-meta';
+      m.textContent = a.subjects + ' · ' + a.total + ' 题';
+      row.appendChild(m);
+
+      var go = document.createElement('span');
+      go.className = 'wrong-archive-go';
+      go.textContent = '打开 ↗';
+      row.appendChild(go);
+
+      box.appendChild(row);
     }
   }
 
