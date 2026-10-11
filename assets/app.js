@@ -149,6 +149,46 @@
       });
   }
 
+  /* --------------------------------------- 习惯 / 健康 / 错题录入 ---- */
+
+  var HABITS_URL = './data/habits.json';
+  var HEALTH_URL = './data/health.json';
+  var LOCAL_STORE = 'life-platform:local-records:v1';
+
+  var hState = { habits: null, habitsErr: null, health: null, healthErr: null };
+  var localRecords = loadLocalRecords();
+
+  /**
+   * 本机新增记录统一存放（清缓存即丢，故提示文案要说明）。
+   * 结构：{ habits: {'date|key': true}, health: {date: record}, wrongs: [ ... ] }
+   */
+  function loadLocalRecords() {
+    var empty = { habits: {}, health: {}, wrongs: [], wrongFixed: {} };
+    try {
+      var raw = window.localStorage.getItem(LOCAL_STORE);
+      if (!raw) return empty;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return empty;
+      return {
+        habits: (p.habits && typeof p.habits === 'object') ? p.habits : {},
+        health: (p.health && typeof p.health === 'object') ? p.health : {},
+        wrongs: Array.isArray(p.wrongs) ? p.wrongs : [],
+        wrongFixed: (p.wrongFixed && typeof p.wrongFixed === 'object') ? p.wrongFixed : {}
+      };
+    } catch (err) {
+      return empty;
+    }
+  }
+
+  function saveLocalRecords() {
+    try {
+      window.localStorage.setItem(LOCAL_STORE, JSON.stringify(localRecords));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   /** 预留板块的文案（与 index.html 中的占位内容保持一致） */
   var RESERVED_META = {
     habits: {
@@ -166,6 +206,39 @@
   /* -------------------------------------------------------- DOM 引用 ---- */
 
   var bannerSlot = document.getElementById('banner-slot');
+
+  /* 习惯打卡 */
+  var habitSummary = document.getElementById('habit-summary');
+  var habitToday = document.getElementById('habit-today');
+  var habitList = document.getElementById('habit-list');
+  var habitWeek = document.getElementById('habit-week');
+  var habitFormKey = document.getElementById('habit-form-key');
+  var habitFormDate = document.getElementById('habit-form-date');
+  var habitFormAdd = document.getElementById('habit-form-add');
+  var habitFormNote = document.getElementById('habit-form-note');
+
+  /* 健康 */
+  var healthSummary = document.getElementById('health-summary');
+  var healthChartWeight = document.getElementById('health-chart-weight');
+  var healthChartSleep = document.getElementById('health-chart-sleep');
+  var healthTbody = document.getElementById('health-tbody');
+  var healthFormDate = document.getElementById('health-form-date');
+  var healthFormWeight = document.getElementById('health-form-weight');
+  var healthFormSleep = document.getElementById('health-form-sleep');
+  var healthFormExercise = document.getElementById('health-form-exercise');
+  var healthFormSteps = document.getElementById('health-form-steps');
+  var healthFormNoteInput = document.getElementById('health-form-note');
+  var healthFormSave = document.getElementById('health-form-save');
+  var healthFormNoteMsg = document.getElementById('health-form-note-msg');
+
+  /* 错题录入 */
+  var wrongFormSubject = document.getElementById('wrong-form-subject');
+  var wrongFormCluster = document.getElementById('wrong-form-cluster');
+  var wrongFormStem = document.getElementById('wrong-form-stem');
+  var wrongFormKnow = document.getElementById('wrong-form-know');
+  var wrongFormTags = document.getElementById('wrong-form-tags');
+  var wrongFormSave = document.getElementById('wrong-form-save');
+  var wrongFormNote = document.getElementById('wrong-form-note');
 
   var homeDateText = document.getElementById('home-date-text');
   var homeWeekday = document.getElementById('home-weekday');
@@ -782,7 +855,7 @@
   }
 
   function loadAll() {
-    return Promise.all([loadEntries(), loadFinance(), loadGaokao()]);
+    return Promise.all([loadEntries(), loadFinance(), loadGaokao(), loadHabitsHealth()]);
   }
 
   /* -------------------------------------------------- 高考总攻：加载 ---- */
@@ -797,6 +870,22 @@
         gkState.wrongs = (p && Array.isArray(p.subjects)) ? p : null;
         if (!gkState.wrongs) gkState.wrongsErr = '数据格式不符合预期：缺少 subjects 数组。';
       }, function (err) { gkState.wrongsErr = dataFailureText(WRONGS_URL, normalizeFetchError(err)); })
+    ];
+    return Promise.all(tasks);
+  }
+
+  /* ------------------------------------------- 习惯 / 健康：加载 ---- */
+
+  function loadHabitsHealth() {
+    var tasks = [
+      fetchJson(HABITS_URL).then(function (p) {
+        hState.habits = (p && Array.isArray(p.tracks)) ? p : null;
+        if (!hState.habits) hState.habitsErr = '数据格式不符合预期：缺少 tracks 数组。';
+      }, function (err) { hState.habitsErr = dataFailureText(HABITS_URL, normalizeFetchError(err)); }),
+      fetchJson(HEALTH_URL).then(function (p) {
+        hState.health = (p && Array.isArray(p.records)) ? p : null;
+        if (!hState.health) hState.healthErr = '数据格式不符合预期：缺少 records 数组。';
+      }, function (err) { hState.healthErr = dataFailureText(HEALTH_URL, normalizeFetchError(err)); })
     ];
     return Promise.all(tasks);
   }
@@ -862,6 +951,9 @@
         });
       }
     }
+
+    if (viewName === 'habits') renderHabits();
+    if (viewName === 'health') renderHealth();
 
     if (viewName === 'calendar') {
       if (target.date) {
@@ -1670,7 +1762,12 @@
       gkWrongList.appendChild(buildEmptyState('没有该学科', '请选择其它学科。'));
       return;
     }
-    if (gkWrongCount) gkWrongCount.textContent = subj.total + ' 题 · ' + subj.clusters.length + ' 板块';
+
+    // 本机新增的错题按板块归入当前学科
+    var mine = localRecords.wrongs.filter(function (w) { return w.subject === gkCurrentSubject; });
+    var total = subj.total + mine.length;
+
+    if (gkWrongCount) gkWrongCount.textContent = total + ' 题 · ' + subj.clusters.length + ' 板块';
 
     var ov = document.createElement('p');
     ov.className = 'gk-overview';
@@ -1697,22 +1794,68 @@
       var list = document.createElement('ul');
       list.className = 'gk-question-list';
       for (var qi = 0; qi < cl.questions.length; qi++) {
-        list.appendChild(buildGkQuestion(cl.questions[qi]));
+        // 稳定标识：学科-板块序号-题号，便于「已订正」标记长期对应
+        cl.questions[qi].id = subj.key + '-' + ci + '-' + cl.questions[qi].no;
+        list.appendChild(buildGkQuestion(cl.questions[qi], false));
       }
       card.appendChild(list);
       gkWrongList.appendChild(card);
     }
+
+    // 本机新增的题：按知识点板块归入同名板块，没有则新建「我新增的错题」块
+    if (mine.length) {
+      var buckets = {};
+      var order = [];
+      for (var mi = 0; mi < mine.length; mi++) {
+        var cname = mine[mi].cluster || '未分类';
+        if (!buckets[cname]) { buckets[cname] = []; order.push(cname); }
+        buckets[cname].push(mine[mi]);
+      }
+      for (var oi = 0; oi < order.length; oi++) {
+        var cname2 = order[oi];
+        var group = buckets[cname2];
+        var mCard = document.createElement('div');
+        mCard.className = 'gk-cluster is-mine';
+        var mh = document.createElement('div');
+        mh.className = 'gk-cluster-head';
+        var mt = document.createElement('span');
+        mt.className = 'gk-cluster-title';
+        mt.textContent = '📝 ' + cname2;
+        var mn = document.createElement('span');
+        mn.className = 'gk-cluster-count';
+        mn.textContent = group.length + ' 题';
+        mh.appendChild(mt); mh.appendChild(mn);
+        mCard.appendChild(mh);
+        var mList = document.createElement('ul');
+        mList.className = 'gk-question-list';
+        for (var gj = 0; gj < group.length; gj++) {
+          mList.appendChild(buildGkQuestion(group[gj], true));
+        }
+        mCard.appendChild(mList);
+        gkWrongList.appendChild(mCard);
+      }
+    }
+
+    if (wrongFormSubject && wrongFormSubject.options.length === 0) {
+      for (var si = 0; si < gkState.wrongs.subjects.length; si++) {
+        var op = document.createElement('option');
+        op.value = gkState.wrongs.subjects[si].key;
+        op.textContent = gkState.wrongs.subjects[si].name;
+        wrongFormSubject.appendChild(op);
+      }
+    }
   }
 
-  function buildGkQuestion(q) {
+  function buildGkQuestion(q, isMine) {
     var li = document.createElement('li');
-    li.className = 'gk-question';
+    var fixed = !!(localRecords.wrongFixed[q.id]);
+    li.className = 'gk-question' + (isMine ? ' is-mine' : '') + (fixed ? ' is-fixed' : '');
 
     var head = document.createElement('div');
     head.className = 'gk-q-head';
     var no = document.createElement('span');
     no.className = 'gk-q-no';
-    no.textContent = '第 ' + q.no + ' 题';
+    no.textContent = (isMine ? '新增 · ' : '') + '第 ' + q.no + ' 题';
     head.appendChild(no);
     if (q.imgCount > 0) {
       var im = document.createElement('span');
@@ -1720,6 +1863,44 @@
       im.textContent = '含 ' + q.imgCount + ' 张原题图';
       head.appendChild(im);
     }
+    if (fixed) {
+      var fx = document.createElement('span');
+      fx.className = 'gk-q-fixed';
+      fx.textContent = '✅ 已订正';
+      head.appendChild(fx);
+    }
+
+    // 订正 / 删除（仅本机新增的可删）
+    var actions = document.createElement('span');
+    actions.className = 'gk-q-actions';
+    var fixBtn = document.createElement('button');
+    fixBtn.type = 'button';
+    fixBtn.className = 'btn btn-ghost btn-sm';
+    fixBtn.textContent = fixed ? '取消订正' : '标记已订正';
+    fixBtn.addEventListener('click', (function (id) {
+      return function () {
+        if (localRecords.wrongFixed[id]) delete localRecords.wrongFixed[id];
+        else localRecords.wrongFixed[id] = true;
+        saveLocalRecords();
+        renderGkWrongs();
+      };
+    })(q.id));
+    actions.appendChild(fixBtn);
+
+    if (isMine) {
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'btn btn-ghost btn-sm';
+      rm.textContent = '删除';
+      rm.addEventListener('click', function () {
+        localRecords.wrongs = localRecords.wrongs.filter(function (w) { return w.id !== q.id; });
+        delete localRecords.wrongFixed[q.id];
+        saveLocalRecords();
+        renderGkWrongs();
+      });
+      actions.appendChild(rm);
+    }
+    head.appendChild(actions);
     li.appendChild(head);
 
     var fields = [
@@ -1741,6 +1922,17 @@
       row.appendChild(lb);
       row.appendChild(vl);
       li.appendChild(row);
+    }
+    if (isMine && q.tags && q.tags.length) {
+      var ul = document.createElement('ul');
+      ul.className = 'entry-tags';
+      for (var t = 0; t < q.tags.length; t++) {
+        var tl = document.createElement('li');
+        tl.className = 'tag';
+        tl.textContent = q.tags[t];
+        ul.appendChild(tl);
+      }
+      li.appendChild(ul);
     }
     return li;
   }
@@ -1846,6 +2038,453 @@
     if (gkPanelWrong) gkPanelWrong.hidden = (which !== 'wrong');
   }
 
+  /* ----------------------------------------------------- 习惯打卡 ---- */
+
+  /** 某习惯某天是否已完成（示例数据 + 本机记录合并） */
+  function habitDone(dateKey, trackKey) {
+    if (hState.habits && Array.isArray(hState.habits.records)) {
+      for (var i = 0; i < hState.habits.records.length; i++) {
+        var r = hState.habits.records[i];
+        if (r.date === dateKey && r.key === trackKey && r.done) return true;
+      }
+    }
+    return !!localRecords.habits[dateKey + '|' + trackKey];
+  }
+
+  function habitSet(dateKey, trackKey, on) {
+    var k = dateKey + '|' + trackKey;
+    if (on) localRecords.habits[k] = true;
+    else delete localRecords.habits[k];
+    saveLocalRecords();
+  }
+
+  /** 连续天数：从今天往前数，当天未完成则从昨天起算 */
+  function habitStreak(trackKey) {
+    var n = 0;
+    var cur = new Date();
+    if (!habitDone(keyOfDate(cur), trackKey)) cur.setDate(cur.getDate() - 1);
+    while (habitDone(keyOfDate(cur), trackKey)) {
+      n++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return n;
+  }
+
+  /** 最近 7 天（不含今天，按周一为首列对齐） */
+  function habitWeekDays() {
+    var out = [];
+    var cur = new Date();
+    for (var i = 1; i <= 7; i++) {
+      var d = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() - i);
+      out.push({ key: keyOfDate(d), date: d.getDate(), weekday: '日一二三四五六'[d.getDay()] });
+    }
+    return out;
+  }
+
+  function renderHabits() {
+    if (!habitToday) return;
+    habitToday.innerHTML = ''; habitList.innerHTML = '';
+    habitWeek.innerHTML = ''; habitSummary.innerHTML = '';
+
+    if (hState.habitsErr || !hState.habits) {
+      habitToday.appendChild(buildEmptyState('习惯数据加载失败', hState.habitsErr || '无法读取 habits.json。'));
+      return;
+    }
+
+    var tracks = hState.habits.tracks.filter(function (t) {
+      return t && typeof t.key === 'string' && typeof t.name === 'string';
+    });
+    if (!tracks.length) {
+      habitToday.appendChild(buildEmptyState('还没有习惯项目', '在 ./data/habits.json 的 tracks 数组中新增一项。'));
+      return;
+    }
+
+    var today = todayKeyLocal();
+    var week = habitWeekDays();
+
+    // 今日勾选
+    for (var i = 0; i < tracks.length; i++) {
+      var t = tracks[i];
+      var done = habitDone(today, t.key);
+
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'habit-chip' + (done ? ' is-done' : '');
+      chip.setAttribute('aria-pressed', done ? 'true' : 'false');
+      chip.style.setProperty('--track-color', t.color || 'var(--accent)');
+
+      var icon = document.createElement('span');
+      icon.className = 'habit-chip-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = t.icon || '•';
+      chip.appendChild(icon);
+
+      var nm = document.createElement('span');
+      nm.className = 'habit-chip-name';
+      nm.textContent = t.name;
+      chip.appendChild(nm);
+
+      var mk = document.createElement('span');
+      mk.className = 'habit-chip-mark';
+      mk.setAttribute('aria-hidden', 'true');
+      mk.textContent = done ? '✓' : '○';
+      chip.appendChild(mk);
+
+      (function (track, key) {
+        chip.addEventListener('click', function () {
+          habitSet(today, track.key, !habitDone(today, key));
+          renderHabits();
+        });
+      })(t, t.key);
+
+      habitToday.appendChild(chip);
+    }
+
+    // 汇总
+    var doneToday = 0;
+    for (var j = 0; j < tracks.length; j++) {
+      if (habitDone(today, tracks[j].key)) doneToday++;
+    }
+    habitSummary.appendChild(summaryItem('今日完成', doneToday + ' / ' + tracks.length + ' 项'));
+    habitSummary.appendChild(summaryItem('本周达标', weekCompletion(tracks, week) + ' / ' + tracks.length + ' 项'));
+
+    // 各习惯进度
+    for (var k = 0; k < tracks.length; k++) {
+      var tr = tracks[k];
+      var target = Number(tr.targetPerWeek) > 0 ? Number(tr.targetPerWeek) : 7;
+      var got = 0;
+      for (var w = 0; w < week.length; w++) {
+        if (habitDone(week[w].key, tr.key)) got++;
+      }
+      var pct = Math.min(100, Math.round(got / target * 100));
+      var streak = habitStreak(tr.key);
+
+      var row = document.createElement('div');
+      row.className = 'habit-row';
+      row.style.setProperty('--track-color', tr.color || 'var(--accent)');
+
+      var head = document.createElement('div');
+      head.className = 'habit-row-head';
+      var nm2 = document.createElement('span');
+      nm2.className = 'habit-row-name';
+      nm2.textContent = (tr.icon ? tr.icon + ' ' : '') + tr.name;
+      head.appendChild(nm2);
+      var val = document.createElement('span');
+      val.className = 'habit-row-val';
+      val.textContent = got + ' / ' + target + ' 次/周' + (streak > 0 ? ' · 连续 ' + streak + ' 天' : '');
+      head.appendChild(val);
+      row.appendChild(head);
+
+      var bar = document.createElement('div');
+      bar.className = 'habit-bar';
+      var fill = document.createElement('span');
+      fill.className = 'habit-bar-fill';
+      fill.style.width = pct + '%';
+      bar.appendChild(fill);
+      row.appendChild(bar);
+
+      if (tr.note) {
+        var nt = document.createElement('p');
+        nt.className = 'habit-row-note';
+        nt.textContent = tr.note;
+        row.appendChild(nt);
+      }
+
+      habitList.appendChild(row);
+    }
+
+    // 周视图
+    var grid = document.createElement('div');
+    grid.className = 'habit-week-grid';
+    for (var d2 = 0; d2 < week.length; d2++) {
+      var day = week[d2];
+      var col = document.createElement('div');
+      col.className = 'habit-week-col';
+      var hd = document.createElement('span');
+      hd.className = 'habit-week-head';
+      hd.textContent = '周' + day.weekday;
+      col.appendChild(hd);
+
+      for (var t2 = 0; t2 < tracks.length; t2++) {
+        var cell = document.createElement('span');
+        var on = habitDone(day.key, tracks[t2].key);
+        cell.className = 'habit-week-cell' + (on ? ' is-done' : '');
+        cell.style.setProperty('--track-color', tracks[t2].color || 'var(--accent)');
+        cell.setAttribute('aria-hidden', 'true');
+        cell.textContent = on ? '●' : '·';
+        cell.title = tracks[t2].name + ' ' + day.key;
+        col.appendChild(cell);
+      }
+      habitWeek.appendChild(grid);
+      grid.appendChild(col);
+    }
+
+    // 表单下拉
+    if (habitFormKey && habitFormKey.options.length === 0) {
+      for (var s = 0; s < tracks.length; s++) {
+        var op = document.createElement('option');
+        op.value = tracks[s].key;
+        op.textContent = tracks[s].name;
+        habitFormKey.appendChild(op);
+      }
+    }
+    if (habitFormDate && !habitFormDate.value) habitFormDate.value = today;
+  }
+
+  function weekCompletion(tracks, week) {
+    var n = 0;
+    for (var i = 0; i < tracks.length; i++) {
+      var target = Number(tracks[i].targetPerWeek) > 0 ? Number(tracks[i].targetPerWeek) : 7;
+      var got = 0;
+      for (var w = 0; w < week.length; w++) {
+        if (habitDone(week[w].key, tracks[i].key)) got++;
+      }
+      if (got >= target) n++;
+    }
+    return n;
+  }
+
+  function summaryItem(label, value) {
+    var box = document.createElement('div');
+    box.className = 'summary-item';
+    var l = document.createElement('span');
+    l.className = 'summary-label';
+    l.textContent = label;
+    var v = document.createElement('span');
+    v.className = 'summary-value';
+    v.textContent = value;
+    box.appendChild(l);
+    box.appendChild(v);
+    return box;
+  }
+
+  /* -------------------------------------------------------- 健康 ---- */
+
+  /** 示例数据 + 本机录入合并，按日期倒序 */
+  function healthAll() {
+    var map = new Map();
+    if (hState.health && Array.isArray(hState.health.records)) {
+      for (var i = 0; i < hState.health.records.length; i++) {
+        var r = hState.health.records[i];
+        if (r && /^\d{4}-\d{2}-\d{2}$/.test(r.date)) map.set(r.date, r);
+      }
+    }
+    Object.keys(localRecords.health).forEach(function (d) {
+      map.set(d, localRecords.health[d]);
+    });
+    var list = [];
+    map.forEach(function (v) { list.push(v); });
+    list.sort(function (a, b) { return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+    return list;
+  }
+
+  function num(v) {
+    return typeof v === 'number' && isFinite(v) ? v : null;
+  }
+
+  function renderHealth() {
+    if (!healthSummary) return;
+    healthSummary.innerHTML = '';
+    if (healthChartWeight) healthChartWeight.innerHTML = '';
+    if (healthChartSleep) healthChartSleep.innerHTML = '';
+    if (healthTbody) healthTbody.innerHTML = '';
+
+    if (hState.healthErr || !hState.health) {
+      healthSummary.appendChild(buildEmptyState('健康数据加载失败', hState.healthErr || '无法读取 health.json。'));
+      return;
+    }
+
+    var list = healthAll();
+    if (!list.length) {
+      healthSummary.appendChild(buildEmptyState('还没有健康记录', '在下方录入，或在 ./data/health.json 中新增。'));
+      return;
+    }
+
+    var goals = hState.health.targets || {};
+    var latest = list[0];
+
+    // 汇总
+    var w = num(latest.weightKg);
+    healthSummary.appendChild(summaryItem('最新体重', w === null ? '—' : w.toFixed(1) + ' kg'));
+    var sl = num(latest.sleepHours);
+    healthSummary.appendChild(summaryItem('昨夜睡眠', sl === null ? '—' : sl.toFixed(1) + ' 小时'));
+    var ex = num(latest.exerciseMin);
+    healthSummary.appendChild(summaryItem('运动时长', ex === null ? '—' : ex + ' 分钟'));
+
+    var wGoal = num(goals.weightGoalKg);
+    if (w !== null && wGoal !== null) {
+      var diff = w - wGoal;
+      healthSummary.appendChild(summaryItem(
+        '距目标体重',
+        (diff <= 0 ? '已达标' : '还差 ' + diff.toFixed(1) + ' kg')
+      ));
+    }
+
+    // 趋势图（原生 SVG，零依赖）
+    drawLineChart(healthChartWeight, list.slice(0, 30).reverse(), 'weightKg', '体重 (kg)', '#1f5fd6');
+    drawLineChart(healthChartSleep, list.slice(0, 30).reverse(), 'sleepHours', '睡眠 (小时)', '#7a3fd0', goals.sleepGoalHours);
+
+    // 明细表
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var tr = document.createElement('tr');
+      var cells = [
+        r.date,
+        num(r.weightKg) === null ? '—' : num(r.weightKg).toFixed(1),
+        num(r.sleepHours) === null ? '—' : num(r.sleepHours).toFixed(1),
+        num(r.exerciseMin) === null ? '—' : String(num(r.exerciseMin)),
+        num(r.steps) === null ? '—' : String(num(r.steps)),
+        r.note || ''
+      ];
+      for (var c = 0; c < cells.length; c++) {
+        var td = document.createElement('td');
+        if (c === 0 || c === 5) td.className = 'l';
+        td.textContent = cells[c];
+        tr.appendChild(td);
+      }
+      // 删除按钮（仅本机录入的可删；示例数据删除无效）
+      var tdAct = document.createElement('td');
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-ghost btn-sm';
+      del.textContent = '删除';
+      if (!localRecords.health[r.date]) {
+        del.disabled = true;
+        del.title = '示例数据来自 data/health.json，请改文件删除';
+      } else {
+        del.addEventListener('click', (function (key) {
+          return function () {
+            delete localRecords.health[key];
+            saveLocalRecords();
+            renderHealth();
+          };
+        })(r.date));
+      }
+      tdAct.appendChild(del);
+      tr.appendChild(tdAct);
+      healthTbody.appendChild(tr);
+    }
+
+    if (healthFormDate && !healthFormDate.value) healthFormDate.value = todayKeyLocal();
+  }
+
+  /**
+   * 折线趋势图：原生 SVG，无第三方库。
+   * 用 createElementNS 构建，textContent 赋值，避免 innerHTML 注入。
+   */
+  function drawLineChart(container, list, field, label, color, goalLine) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    var pts = [];
+    for (var i = 0; i < list.length; i++) {
+      var v = num(list[i][field]);
+      if (v !== null) pts.push({ date: list[i].date, v: v });
+    }
+    if (pts.length < 2) {
+      container.appendChild(buildEmptyState('数据不足', '至少需要 2 天的记录才能画出趋势。'));
+      return;
+    }
+
+    var W = 640, H = 200, PL = 46, PR = 14, PT = 14, PB = 26;
+    var iw = W - PL - PR, ih = H - PT - PB;
+
+    var vals = pts.map(function (p) { return p.v; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    if (goalLine !== undefined && goalLine !== null && isFinite(goalLine)) {
+      min = Math.min(min, goalLine); max = Math.max(max, goalLine);
+    }
+    var span = max - min;
+    if (span < 1e-6) { min -= 1; max += 1; span = max - min; }
+    var pad = span * 0.15;
+    min -= pad; max += pad; span = max - min;
+
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'chart-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', label + '趋势，最近 ' + pts.length + ' 天，从 ' + min.toFixed(1) + ' 到 ' + max.toFixed(1));
+
+    var xOf = function (i) { return PL + (pts.length === 1 ? iw / 2 : i * iw / (pts.length - 1)); };
+    var yOf = function (v) { return PT + ih - (v - min) / span * ih; };
+
+    // 横向网格与刻度
+    for (var g = 0; g <= 3; g++) {
+      var val = min + span * g / 3;
+      var y = yOf(val);
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', PL); line.setAttribute('x2', W - PR);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('class', 'chart-grid');
+      svg.appendChild(line);
+
+      var tx = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tx.setAttribute('x', PL - 6); tx.setAttribute('y', y + 4);
+      tx.setAttribute('class', 'chart-tick');
+      tx.setAttribute('text-anchor', 'end');
+      tx.textContent = val.toFixed(1);
+      svg.appendChild(tx);
+    }
+
+    // 目标线
+    if (goalLine !== undefined && goalLine !== null && isFinite(goalLine)) {
+      var gy = yOf(goalLine);
+      var gl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      gl.setAttribute('x1', PL); gl.setAttribute('x2', W - PR);
+      gl.setAttribute('y1', gy); gl.setAttribute('y2', gy);
+      gl.setAttribute('class', 'chart-goal');
+      svg.appendChild(gl);
+      var gt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      gt.setAttribute('x', W - PR); gt.setAttribute('y', gy - 4);
+      gt.setAttribute('class', 'chart-goal-label');
+      gt.setAttribute('text-anchor', 'end');
+      gt.textContent = '目标 ' + goalLine;
+      svg.appendChild(gt);
+    }
+
+    // 折线
+    var d = '';
+    for (var k = 0; k < pts.length; k++) {
+      d += (k === 0 ? 'M' : 'L') + xOf(k).toFixed(1) + ' ' + yOf(pts[k].v).toFixed(1) + ' ';
+    }
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d.trim());
+    path.setAttribute('class', 'chart-line');
+    path.setAttribute('stroke', color);
+    svg.appendChild(path);
+
+    // 数据点
+    for (var p = 0; p < pts.length; p++) {
+      var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', xOf(p)); dot.setAttribute('cy', yOf(pts[p].v));
+      dot.setAttribute('r', 3);
+      dot.setAttribute('class', 'chart-dot');
+      dot.setAttribute('fill', color);
+      var ttl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      ttl.textContent = pts[p].date + ' · ' + pts[p].v;
+      dot.appendChild(ttl);
+      svg.appendChild(dot);
+    }
+
+    // X 轴首尾日期
+    [0, pts.length - 1].forEach(function (i) {
+      var lt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lt.setAttribute('x', xOf(i)); lt.setAttribute('y', H - 8);
+      lt.setAttribute('class', 'chart-tick');
+      lt.setAttribute('text-anchor', i === 0 ? 'start' : 'end');
+      lt.textContent = pts[i].date.slice(5);
+      svg.appendChild(lt);
+    });
+
+    container.appendChild(svg);
+
+    var cap = document.createElement('p');
+    cap.className = 'chart-caption';
+    cap.textContent = label + '：' + pts[0].v + ' → ' + pts[pts.length - 1].v +
+      '（共 ' + pts.length + ' 天）';
+    container.appendChild(cap);
+  }
+
   /* -------------------------------------------------------- 页脚 ---- */
 
   function updateFooter() {
@@ -1901,6 +2540,8 @@
     renderHome();
     renderFinance();
     renderGaokao();
+    renderHabits();
+    renderHealth();
     updateFooter();
   }
 
@@ -2086,6 +2727,103 @@
     for (var gi = 0; gi < gkTabs.length; gi++) {
       gkTabs[gi].addEventListener('click', function (event) {
         switchGkTab(event.currentTarget.getAttribute('data-gk-tab'));
+      });
+    }
+
+    /* ---- 习惯打卡：补录 ---- */
+    if (habitFormAdd && habitFormKey && habitFormDate) {
+      habitFormAdd.addEventListener('click', function () {
+        var d = habitFormDate.value;
+        var k = habitFormKey.value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+          if (habitFormNote) habitFormNote.textContent = '请先选择日期';
+          return;
+        }
+        if (!k) return;
+        habitSet(d, k, true);
+        if (habitFormNote) {
+          habitFormNote.textContent = '已记录 ' + d + ' 的' +
+            (habitFormKey.options[habitFormKey.selectedIndex] ? habitFormKey.options[habitFormKey.selectedIndex].text : '') +
+            '，可在「今日打卡」取消当天的勾选。';
+        }
+        renderHabits();
+      });
+    }
+
+    /* ---- 健康：录入 / 删除 ---- */
+    if (healthFormSave) {
+      healthFormSave.addEventListener('click', function () {
+        var d = healthFormDate.value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+          if (healthFormNoteMsg) healthFormNoteMsg.textContent = '请先选择日期';
+          return;
+        }
+        var rec = { date: d };
+        var w = parseFloat(healthFormWeight.value);
+        var s = parseFloat(healthFormSleep.value);
+        var e = parseInt(healthFormExercise.value, 10);
+        var st = parseInt(healthFormSteps.value, 10);
+        rec.weightKg = isFinite(w) ? w : null;
+        rec.sleepHours = isFinite(s) ? s : null;
+        rec.exerciseMin = isFinite(e) ? e : 0;
+        rec.steps = isFinite(st) ? st : 0;
+        rec.note = healthFormNoteInput.value.trim();
+
+        if (rec.weightKg === null && rec.sleepHours === null && !rec.exerciseMin && !rec.steps) {
+          if (healthFormNoteMsg) healthFormNoteMsg.textContent = '至少填写一项数值再保存';
+          return;
+        }
+
+        localRecords.health[d] = rec;
+        saveLocalRecords();
+        if (healthFormNoteMsg) healthFormNoteMsg.textContent = '已保存 ' + d + ' 的记录';
+        healthFormWeight.value = ''; healthFormSleep.value = '';
+        healthFormExercise.value = ''; healthFormSteps.value = ''; healthFormNoteInput.value = '';
+        renderHealth();
+      });
+    }
+
+    /* ---- 错题：新增 ---- */
+    if (wrongFormSave) {
+      wrongFormSave.addEventListener('click', function () {
+        var stem = wrongFormStem.value.trim();
+        var subject = wrongFormSubject.value;
+        if (!stem) {
+          if (wrongFormNote) wrongFormNote.textContent = '请先填写关键题干';
+          return;
+        }
+        var cluster = wrongFormCluster.value.trim();
+        if (!cluster) {
+          if (wrongFormNote) wrongFormNote.textContent = '请填写知识点板块，便于归类';
+          return;
+        }
+        var tagsRaw = wrongFormTags.value.trim();
+        var tags = tagsRaw ? tagsRaw.split(/\s+/) : [];
+
+        localRecords.wrongs.push({
+          id: 'local-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+          no: localRecords.wrongs.filter(function (w) { return w.subject === subject; }).length + 1,
+          subject: subject,
+          cluster: cluster,
+          stem: stem,
+          review: '',
+          point: '',
+          know: wrongFormKnow.value.trim(),
+          imgCount: 0,
+          tags: tags
+        });
+        saveLocalRecords();
+
+        wrongFormStem.value = '';
+        wrongFormKnow.value = '';
+        wrongFormTags.value = '';
+        wrongFormCluster.value = '';
+        if (wrongFormNote) wrongFormNote.textContent = '已加入错题本（存在本机浏览器，清缓存会丢）';
+
+        // 切到该学科并刷新，方便立即看到
+        gkCurrentSubject = subject;
+        if (gkSubjectSelect) gkSubjectSelect.value = subject;
+        renderGkWrongs();
       });
     }
 

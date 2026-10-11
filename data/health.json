@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-11",
+  "source": "健康示例数据（手工编辑新增，前端只读；网页上新建的记录存本机浏览器）",
+  "records": [
+    { "date": "2026-10-05", "weightKg": 72.4, "sleepHours": 6.8, "exerciseMin": 0,   "steps": 6420,  "note": "" },
+    { "date": "2026-10-06", "weightKg": 72.1, "sleepHours": 7.2, "exerciseMin": 35, "steps": 11250, "note": "晨跑 5 公里" },
+    { "date": "2026-10-07", "weightKg": 72.3, "sleepHours": 7.5, "exerciseMin": 45, "steps": 9800,  "note": "力量训练" },
+    { "date": "2026-10-08", "weightKg": 71.9, "sleepHours": 6.5, "exerciseMin": 0,   "steps": 5310,  "note": "" },
+    { "date": "2026-10-09", "weightKg": 71.8, "sleepHours": 7.0, "exerciseMin": 30, "steps": 10400, "note": "游泳" },
+    { "date": "2026-10-10", "weightKg": 71.5, "sleepHours": 7.8, "exerciseMin": 50, "steps": 13800, "note": "跑步 + 拉伸" },
+    { "date": "2026-10-11", "weightKg": 71.3, "sleepHours": 7.4, "exerciseMin": 40, "steps": 12050, "note": "骑行" }
+  ],
+  "targets": {
+    "weightGoalKg": 70.0,
+    "sleepGoalHours": 7.5,
+    "exerciseGoalMin": 40,
+    "stepGoal": 10000
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-11",
+  "source": "习惯打卡示例数据（手工编辑新增，前端只读；网页上新建的记录存本机浏览器）",
+  "tracks": [
+    {
+      "key": "run",
+      "name": "晨跑",
+      "icon": "🏃",
+      "targetPerWeek": 4,
+      "color": "#1f5fd6",
+      "note": "每周至少 4 次，配速 7 分以内"
+    },
+    {
+      "key": "read",
+      "name": "阅读",
+      "icon": "📖",
+      "targetPerWeek": 6,
+      "color": "#7a3fd0",
+      "note": "每天 30 页，优先专业书"
+    },
+    {
+      "key": "english",
+      "name": "3500 词听写",
+      "icon": "🔤",
+      "targetPerWeek": 7,
+      "color": "#0f6b46",
+      "note": "每天一组，先默写再核对"
+    },
+    {
+      "key": "sleep",
+      "name": "早睡",
+      "icon": "🌙",
+      "targetPerWeek": 5,
+      "color": "#b4451f",
+      "note": "23:30 前入睡"
+    }
+  ],
+  "records": [
+    { "date": "2026-10-06", "key": "run", "done": true },
+    { "date": "2026-10-07", "key": "read", "done": true },
+    { "date": "2026-10-07", "key": "english", "done": true },
+    { "date": "2026-10-07", "key": "sleep", "done": true },
+    { "date": "2026-10-08", "key": "run", "done": true },
+    { "date": "2026-10-08", "key": "english", "done": true },
+    { "date": "2026-10-09", "key": "read", "done": true },
+    { "date": "2026-10-09", "key": "english", "done": true },
+    { "date": "2026-10-09", "key": "sleep", "done": true },
+    { "date": "2026-10-10", "key": "run", "done": true },
+    { "date": "2026-10-10", "key": "read", "done": true },
+    { "date": "2026-10-10", "key": "english", "done": true },
+    { "date": "2026-10-11", "key": "run", "done": true },
+    { "date": "2026-10-11", "key": "read", "done": true }
+  ]
+}
