@@ -1,0 +1,20 @@
+# Wrangler 部署配置
+# 复制本文件为 wrangler.toml 后按需修改。
+
+name = "life-platform-checkin-sync"
+main = "src/index.js"
+compatibility_date = "2026-10-11"
+
+# KV 命名空间：首次部署前先执行
+#   npx wrangler kv namespace create GAOKAO_CHECKINS
+# 然后把返回的 id 填到下面
+[[kv_namespaces]]
+binding = "GAOKAO_CHECKINS"
+id = "在此粘贴 namespace id"
+
+# 口令：不要写进本文件。用 secrets 单独设置：
+#   npx wrangler secret put SYNC_TOKEN
+# 读取方式见 src/index.js 的 env_token()
+
+[observability]
+enabled = false

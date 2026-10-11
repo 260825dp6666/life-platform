@@ -183,6 +183,13 @@
           <button type="button" class="btn" id="gk-checkin-btn">签到</button>
         </div>
         <p class="gk-streak" id="gk-streak">—</p>
+        <p class="gk-sync-row" id="gk-sync-row" hidden>
+          <label class="gk-sync-label" for="gk-sync-token">同步口令</label>
+          <input type="password" id="gk-sync-token" class="gk-sync-input" autocomplete="off"
+                 placeholder="输入口令以开启多设备同步">
+          <button type="button" class="btn btn-ghost" id="gk-sync-save">保存并同步</button>
+          <span class="gk-sync-note" id="gk-sync-note">口令仅保存在本机浏览器。</span>
+        </p>
 
         <!-- 三个子功能页签 -->
         <div class="gk-tabs" role="tablist" aria-label="高考总攻子功能">

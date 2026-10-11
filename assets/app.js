@@ -42,9 +42,13 @@
   var WORDS_URL = './data/gaokao/words.json';
   var WRONGS_URL = './data/gaokao/wrongs.json';
   var GK_STORE_KEY = 'life-platform:gaokao:v1';
+  var GK_SYNC_STORE = 'life-platform:gaokao:sync:v1';
+  // 云端签到同步地址。未配置时签到仅存本机（原有行为）。
+  var GK_SYNC_ENDPOINT = '';
 
   var gkState = { words: null, wrongs: null, wordsErr: null, wrongsErr: null };
   var gkProgress = loadGkProgress();
+  var gkSync = { token: '', state: 'idle', msg: '', lastTotal: null };
 
   /** 读取本机进度（签到与练习记录）；localStorage 不可用时静默降级为空进度 */
   function loadGkProgress() {
@@ -70,6 +74,79 @@
     } catch (err) {
       return false;
     }
+  }
+
+  /* -------------------------------------------- 签到云同步（可选） ---- */
+
+  /** 同步口令只存本机，不随站点发布；未配置时全程静默跳过 */
+  function gkLoadToken() {
+    try { gkSync.token = window.localStorage.getItem(GK_SYNC_STORE) || ''; }
+    catch (err) { gkSync.token = ''; }
+  }
+
+  function gkSaveToken(t) {
+    gkSync.token = t;
+    try { window.localStorage.setItem(GK_SYNC_STORE, t); } catch (err) { /* 忽略 */ }
+  }
+
+  function syncEnabled() {
+    return !!(GK_SYNC_ENDPOINT && gkSync.token);
+  }
+
+  function mergeCheckins(days) {
+    if (!Array.isArray(days)) return;
+    var added = 0;
+    for (var i = 0; i < days.length; i++) {
+      if (!gkProgress.checkins[days[i]]) { gkProgress.checkins[days[i]] = true; added++; }
+    }
+    saveGkProgress();
+    gkSync.lastTotal = Object.keys(gkProgress.checkins).length;
+    return added;
+  }
+
+  /** 从云端拉取并合并签到记录 */
+  function gkPullFromCloud() {
+    if (!syncEnabled()) return Promise.resolve(0);
+    return fetch(GK_SYNC_ENDPOINT, { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        var added = mergeCheckins(data && data.days);
+        gkSync.state = 'ok';
+        gkSync.msg = added > 0 ? ('已从云端合并 ' + added + ' 天') : '云端已是最新';
+        return added;
+      })
+      .catch(function (err) {
+        gkSync.state = 'failed';
+        gkSync.msg = '云端同步不可用（' + err.message + '），已改用本机记录';
+        return 0;
+      });
+  }
+
+  /** 把当天签到推到云端 */
+  function gkPushToCloud(dateKey) {
+    if (!syncEnabled()) return Promise.resolve(false);
+    return fetch(GK_SYNC_ENDPOINT + '/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Sync-Token': gkSync.token },
+      body: JSON.stringify({ date: dateKey, token: gkSync.token })
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          if (!r.ok || !data.ok) throw new Error((data && data.error) || ('HTTP ' + r.status));
+          mergeCheckins(data.days);
+          gkSync.state = 'ok';
+          gkSync.msg = data.already ? '云端已有今日记录' : '已同步到云端';
+          return true;
+        });
+      })
+      .catch(function (err) {
+        gkSync.state = 'failed';
+        gkSync.msg = '云端同步失败（' + err.message + '），仅保存在本机';
+        return false;
+      });
   }
 
   /** 预留板块的文案（与 index.html 中的占位内容保持一致） */
@@ -134,6 +211,10 @@
   var gkWrongCount = document.getElementById('gk-wrong-count');
   var gkWrongList = document.getElementById('gk-wrong-list');
   var gkQuizHint = document.getElementById('gk-quiz-hint');
+  var gkSyncRow = document.getElementById('gk-sync-row');
+  var gkSyncInput = document.getElementById('gk-sync-token');
+  var gkSyncSave = document.getElementById('gk-sync-save');
+  var gkSyncNote = document.getElementById('gk-sync-note');
   var gkTabs = [].slice.call(document.querySelectorAll('.gk-tab'));
   var gkPanelWords = document.getElementById('gk-panel-words');
   var gkPanelWrong = document.getElementById('gk-panel-wrong');
@@ -774,6 +855,12 @@
 
     if (viewName === 'gaokao') {
       renderGaokao();
+      // 进入板块时拉一次云端（仅在已配置口令时），合并后重绘
+      if (syncEnabled()) {
+        gkPullFromCloud().then(function (added) {
+          if (added > 0) renderGkCheckin();
+        });
+      }
     }
 
     if (viewName === 'calendar') {
@@ -1529,9 +1616,23 @@
     }
     if (gkStreak) {
       var s = gkStreakDays();
-      gkStreak.textContent = s > 0
+      var base = s > 0
         ? '🔥 连续签到 ' + s + ' 天' + (s >= 2 ? '，保持住！' : '，开了个好头')
         : '还没有连续签到记录，今天签一下开始。';
+      if (syncEnabled()) {
+        base += gkSync.msg ? '  ·  ' + gkSync.msg : '  ·  云同步已就绪';
+      }
+      gkStreak.textContent = base;
+    }
+    // 只有配置了云端地址才暴露同步设置入口
+    if (gkSyncRow) {
+      var show = !!GK_SYNC_ENDPOINT;
+      gkSyncRow.hidden = !show;
+      if (show && gkSyncNote) {
+        gkSyncNote.textContent = gkSync.token
+          ? '已配置口令，签到会自动同步到云端。'
+          : '口令仅保存在本机浏览器，不会上传。';
+      }
     }
   }
 
@@ -1904,6 +2005,7 @@
   }
 
   function bindEvents() {
+    gkLoadToken();
     prevBtn.addEventListener('click', function () { stepMonth(-1); });
     nextBtn.addEventListener('click', function () { stepMonth(1); });
     todayBtn.addEventListener('click', goToday);
@@ -1936,6 +2038,11 @@
           if (gkStreak) {
             gkStreak.textContent = '🔥 已记录本次签到（本机存储不可用，刷新后不保留）';
           }
+          return;
+        }
+        // 本机已落盘后再推云端；云端失败不影响本机记录
+        if (syncEnabled()) {
+          gkPushToCloud(today).then(function () { renderGkCheckin(); });
         }
       });
     }
@@ -1943,6 +2050,19 @@
       gkDaySelect.addEventListener('change', function () {
         gkCurrentDay = Number(gkDaySelect.value) || 1;
         renderGkWords();
+      });
+    }
+    if (gkSyncSave && gkSyncInput) {
+      gkSyncSave.addEventListener('click', function () {
+        var t = gkSyncInput.value.trim();
+        if (!t) {
+          gkSync.state = 'failed';
+          gkSync.msg = '口令不能为空';
+          renderGkCheckin();
+          return;
+        }
+        gkSaveToken(t);
+        gkPullFromCloud().then(function () { renderGkCheckin(); });
       });
     }
     if (gkStartQuiz) {
