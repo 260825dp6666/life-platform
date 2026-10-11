@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>个人生活平台 · 日历 / 每日记录 / 理财复盘</title>
+  <title>个人生活平台 · 日历 / 每日记录 / 理财复盘 / 高考总攻</title>
   <meta name="description" content="个人生活平台 v1.1：日历 + 每日记录 + 理财复盘，多板块 hash 路由，纯静态、零依赖。">
   <link rel="icon" href="data:,">
   <!-- 相对路径铁律：必须以 ./ 开头，保证在 GitHub Pages 子路径 /<repo>/ 下正常加载 -->
@@ -23,6 +23,7 @@
           <li class="topnav-item"><a class="topnav-link" href="#/home" data-view="home">首页</a></li>
           <li class="topnav-item"><a class="topnav-link" href="#/calendar" data-view="calendar">日历</a></li>
           <li class="topnav-item"><a class="topnav-link" href="#/finance" data-view="finance">理财复盘</a></li>
+          <li class="topnav-item"><a class="topnav-link" href="#/gaokao" data-view="gaokao">高考总攻</a></li>
           <li class="topnav-item">
             <a class="topnav-link" href="#/habits" data-view="habits" aria-label="习惯打卡（规划中）">
               习惯打卡<span class="nav-lock" aria-hidden="true">规划中</span>
@@ -163,6 +164,65 @@
         </div>
 
         <div class="review-list" id="finance-list"></div>
+      </section>
+
+      <!-- ================================================ 视图：高考总攻 -->
+      <section class="view" id="view-gaokao" hidden aria-labelledby="gaokao-title">
+        <h2 class="view-title" id="view-gaokao-title" tabindex="-1">高考总攻</h2>
+        <p class="view-note">
+          数据来源：<code>./data/gaokao/words.json</code>（3500 词，按天）与
+          <code>./data/gaokao/wrongs.json</code>（错题，按学科）。前端只读，进度存本机浏览器。
+        </p>
+
+        <!-- 签到条 -->
+        <div class="gk-checkin" id="gk-checkin">
+          <div class="gk-checkin-left">
+            <p class="gk-checkin-label">每日签到</p>
+            <p class="gk-checkin-sub" id="gk-checkin-sub">—</p>
+          </div>
+          <button type="button" class="btn" id="gk-checkin-btn">签到</button>
+        </div>
+        <p class="gk-streak" id="gk-streak">—</p>
+
+        <!-- 三个子功能页签 -->
+        <div class="gk-tabs" role="tablist" aria-label="高考总攻子功能">
+          <button type="button" class="gk-tab is-current" role="tab" id="gk-tab-words"
+                  aria-selected="true" aria-controls="gk-panel-words" data-gk-tab="words">3500 词练习</button>
+          <button type="button" class="gk-tab" role="tab" id="gk-tab-wrong"
+                  aria-selected="false" aria-controls="gk-panel-wrong" data-gk-tab="wrong">错题工作台</button>
+        </div>
+
+        <!-- 子面板：3500 词练习 -->
+        <div class="gk-panel" id="gk-panel-words" role="tabpanel" aria-labelledby="gk-tab-words">
+          <div class="gk-toolbar">
+            <label class="gk-field">
+              选择天数
+              <select id="gk-day-select" aria-label="选择第几天"></select>
+            </label>
+            <span class="gk-count" id="gk-word-count">—</span>
+            <button type="button" class="btn" id="gk-start-quiz">开始听写</button>
+            <button type="button" class="btn btn-ghost" id="gk-show-all">显示全部释义</button>
+          </div>
+          <p class="gk-hint" id="gk-quiz-hint">
+            点击「开始听写」后，中文释义会被隐藏，凭英文写出中文；再点一次可核对答案。
+          </p>
+          <div class="gk-word-list" id="gk-word-list"></div>
+        </div>
+
+        <!-- 子面板：错题工作台 -->
+        <div class="gk-panel" id="gk-panel-wrong" role="tabpanel" aria-labelledby="gk-tab-wrong" hidden>
+          <div class="gk-toolbar">
+            <label class="gk-field">
+              选择学科
+              <select id="gk-subject-select" aria-label="选择学科"></select>
+            </label>
+            <span class="gk-count" id="gk-wrong-count">—</span>
+            <a class="btn btn-ghost" id="gk-wrong-master" href="./reports/错题集/错题集归纳分析.html"
+               target="_blank" rel="noopener noreferrer">打开完整错题主档 ↗</a>
+          </div>
+          <p class="gk-hint">按学科拆分自错题主档；含原题图片的完整版点右上角打开。</p>
+          <div class="gk-wrong-list" id="gk-wrong-list"></div>
+        </div>
       </section>
 
       <!-- ================================================ 视图：预留板块 -->

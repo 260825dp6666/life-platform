@@ -35,7 +35,42 @@
 
   var WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   var DEFAULT_VIEW = 'home';
-  var KNOWN_VIEWS = ['home', 'calendar', 'finance', 'habits', 'health', 'about'];
+  var KNOWN_VIEWS = ['home', 'calendar', 'finance', 'gaokao', 'habits', 'health', 'about'];
+
+  /* ------------------------------------------------ 高考总攻：常量 ---- */
+
+  var WORDS_URL = './data/gaokao/words.json';
+  var WRONGS_URL = './data/gaokao/wrongs.json';
+  var GK_STORE_KEY = 'life-platform:gaokao:v1';
+
+  var gkState = { words: null, wrongs: null, wordsErr: null, wrongsErr: null };
+  var gkProgress = loadGkProgress();
+
+  /** 读取本机进度（签到与练习记录）；localStorage 不可用时静默降级为空进度 */
+  function loadGkProgress() {
+    var empty = { checkins: {}, quiz: {} };
+    try {
+      var raw = window.localStorage.getItem(GK_STORE_KEY);
+      if (!raw) return empty;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return empty;
+      return {
+        checkins: (p.checkins && typeof p.checkins === 'object') ? p.checkins : {},
+        quiz: (p.quiz && typeof p.quiz === 'object') ? p.quiz : {}
+      };
+    } catch (err) {
+      return empty;
+    }
+  }
+
+  function saveGkProgress() {
+    try {
+      window.localStorage.setItem(GK_STORE_KEY, JSON.stringify(gkProgress));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
 
   /** 预留板块的文案（与 index.html 中的占位内容保持一致） */
   var RESERVED_META = {
@@ -85,6 +120,27 @@
   var finNextBtn = document.getElementById('fin-next-month');
   var finResetBtn = document.getElementById('fin-reset-month');
   var finMonthLabel = document.getElementById('fin-month-label');
+
+  /* 高考总攻 DOM */
+  var gkCheckinBtn = document.getElementById('gk-checkin-btn');
+  var gkCheckinSub = document.getElementById('gk-checkin-sub');
+  var gkStreak = document.getElementById('gk-streak');
+  var gkDaySelect = document.getElementById('gk-day-select');
+  var gkWordCount = document.getElementById('gk-word-count');
+  var gkStartQuiz = document.getElementById('gk-start-quiz');
+  var gkShowAll = document.getElementById('gk-show-all');
+  var gkWordList = document.getElementById('gk-word-list');
+  var gkSubjectSelect = document.getElementById('gk-subject-select');
+  var gkWrongCount = document.getElementById('gk-wrong-count');
+  var gkWrongList = document.getElementById('gk-wrong-list');
+  var gkQuizHint = document.getElementById('gk-quiz-hint');
+  var gkTabs = [].slice.call(document.querySelectorAll('.gk-tab'));
+  var gkPanelWords = document.getElementById('gk-panel-words');
+  var gkPanelWrong = document.getElementById('gk-panel-wrong');
+
+  var gkCurrentDay = 1;
+  var gkQuizMode = false; // false=看答案 | true=遮住释义
+  var gkCurrentSubject = 'math';
 
   var footerStats = document.getElementById('footer-stats');
   var aboutVersion = document.getElementById('about-version');
@@ -645,7 +701,23 @@
   }
 
   function loadAll() {
-    return Promise.all([loadEntries(), loadFinance()]);
+    return Promise.all([loadEntries(), loadFinance(), loadGaokao()]);
+  }
+
+  /* -------------------------------------------------- 高考总攻：加载 ---- */
+
+  function loadGaokao() {
+    var tasks = [
+      fetchJson(WORDS_URL).then(function (p) {
+        gkState.words = (p && Array.isArray(p.days)) ? p : null;
+        if (!gkState.words) gkState.wordsErr = '数据格式不符合预期：缺少 days 数组。';
+      }, function (err) { gkState.wordsErr = dataFailureText(WORDS_URL, normalizeFetchError(err)); }),
+      fetchJson(WRONGS_URL).then(function (p) {
+        gkState.wrongs = (p && Array.isArray(p.subjects)) ? p : null;
+        if (!gkState.wrongs) gkState.wrongsErr = '数据格式不符合预期：缺少 subjects 数组。';
+      }, function (err) { gkState.wrongsErr = dataFailureText(WRONGS_URL, normalizeFetchError(err)); })
+    ];
+    return Promise.all(tasks);
   }
 
   /* ------------------------------------------------------------ 路由 ---- */
@@ -699,6 +771,10 @@
   function route(focusTitle) {
     var target = parseHash();
     var viewName = target.view;
+
+    if (viewName === 'gaokao') {
+      renderGaokao();
+    }
 
     if (viewName === 'calendar') {
       if (target.date) {
@@ -1407,6 +1483,268 @@
     }
   }
 
+  /* -------------------------------------------------- 高考总攻：渲染 ---- */
+
+  function todayKeyLocal() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  /** 连续签到天数：从今天往前数，断一天即止 */
+  function gkStreakDays() {
+    var n = 0;
+    var cursor = new Date();
+    while (gkProgress.checkins[keyOfDate(cursor)]) {
+      n++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return n;
+  }
+
+  function keyOfDate(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function renderGaokao() {
+    renderGkCheckin();
+    renderGkDaySelect();
+    renderGkWords();
+    renderGkSubjectSelect();
+    renderGkWrongs();
+  }
+
+  function renderGkCheckin() {
+    var today = todayKeyLocal();
+    var done = !!gkProgress.checkins[today];
+    if (gkCheckinBtn) {
+      gkCheckinBtn.textContent = done ? '今日已签到 ✓' : '签到';
+      gkCheckinBtn.disabled = done;
+      gkCheckinBtn.className = 'btn' + (done ? ' btn-ghost' : '');
+    }
+    if (gkCheckinSub) {
+      var total = Object.keys(gkProgress.checkins).length;
+      gkCheckinSub.textContent = done
+        ? '今天已完成，累计签到 ' + total + ' 天'
+        : '今天还没签到，累计 ' + total + ' 天';
+    }
+    if (gkStreak) {
+      var s = gkStreakDays();
+      gkStreak.textContent = s > 0
+        ? '🔥 连续签到 ' + s + ' 天' + (s >= 2 ? '，保持住！' : '，开了个好头')
+        : '还没有连续签到记录，今天签一下开始。';
+    }
+  }
+
+  function renderGkDaySelect() {
+    if (!gkDaySelect) return;
+    if (gkDaySelect.options.length) return; // 只填一次
+    if (gkState.wordsErr || !gkState.words) {
+      gkDaySelect.innerHTML = '';
+      return;
+    }
+    gkDaySelect.innerHTML = '';
+    for (var i = 0; i < gkState.words.days.length; i++) {
+      var d = gkState.words.days[i];
+      var op = document.createElement('option');
+      op.value = String(d.day);
+      op.textContent = '第 ' + d.day + ' 天（' + d.count + ' 词）' + (d.range ? ' · ' + d.range : '');
+      gkDaySelect.appendChild(op);
+    }
+    gkDaySelect.value = String(gkCurrentDay);
+  }
+
+  function renderGkWrongs() {
+    if (!gkWrongList) return;
+    gkWrongList.innerHTML = '';
+    if (gkState.wrongsErr || !gkState.wrongs) {
+      gkWrongList.appendChild(buildEmptyState('错题数据加载失败', gkState.wrongsErr || '无法读取错题数据。'));
+      if (gkWrongCount) gkWrongCount.textContent = '—';
+      return;
+    }
+    var subj = null;
+    for (var i = 0; i < gkState.wrongs.subjects.length; i++) {
+      if (gkState.wrongs.subjects[i].key === gkCurrentSubject) subj = gkState.wrongs.subjects[i];
+    }
+    if (!subj) {
+      gkWrongList.appendChild(buildEmptyState('没有该学科', '请选择其它学科。'));
+      return;
+    }
+    if (gkWrongCount) gkWrongCount.textContent = subj.total + ' 题 · ' + subj.clusters.length + ' 板块';
+
+    var ov = document.createElement('p');
+    ov.className = 'gk-overview';
+    ov.textContent = subj.overview;
+    gkWrongList.appendChild(ov);
+
+    for (var ci = 0; ci < subj.clusters.length; ci++) {
+      var cl = subj.clusters[ci];
+      var card = document.createElement('div');
+      card.className = 'gk-cluster';
+
+      var h = document.createElement('div');
+      h.className = 'gk-cluster-head';
+      var t = document.createElement('span');
+      t.className = 'gk-cluster-title';
+      t.textContent = cl.title;
+      var n = document.createElement('span');
+      n.className = 'gk-cluster-count';
+      n.textContent = cl.count + ' 题';
+      h.appendChild(t);
+      h.appendChild(n);
+      card.appendChild(h);
+
+      var list = document.createElement('ul');
+      list.className = 'gk-question-list';
+      for (var qi = 0; qi < cl.questions.length; qi++) {
+        list.appendChild(buildGkQuestion(cl.questions[qi]));
+      }
+      card.appendChild(list);
+      gkWrongList.appendChild(card);
+    }
+  }
+
+  function buildGkQuestion(q) {
+    var li = document.createElement('li');
+    li.className = 'gk-question';
+
+    var head = document.createElement('div');
+    head.className = 'gk-q-head';
+    var no = document.createElement('span');
+    no.className = 'gk-q-no';
+    no.textContent = '第 ' + q.no + ' 题';
+    head.appendChild(no);
+    if (q.imgCount > 0) {
+      var im = document.createElement('span');
+      im.className = 'gk-q-img';
+      im.textContent = '含 ' + q.imgCount + ' 张原题图';
+      head.appendChild(im);
+    }
+    li.appendChild(head);
+
+    var fields = [
+      ['🎯 关键题干', q.stem],
+      ['🔍 审题', q.review],
+      ['💡 要点', q.point],
+      ['📚 知识点', q.know]
+    ];
+    for (var i = 0; i < fields.length; i++) {
+      if (!fields[i][1]) continue;
+      var row = document.createElement('div');
+      row.className = 'gk-q-row';
+      var lb = document.createElement('span');
+      lb.className = 'gk-q-label';
+      lb.textContent = fields[i][0];
+      var vl = document.createElement('span');
+      vl.className = 'gk-q-value';
+      vl.textContent = fields[i][1];
+      row.appendChild(lb);
+      row.appendChild(vl);
+      li.appendChild(row);
+    }
+    return li;
+  }
+
+  function renderGkSubjectSelect() {
+    if (!gkSubjectSelect) return;
+    if (gkSubjectSelect.options.length) return;
+    if (gkState.wrongsErr || !gkState.wrongs) return;
+    gkSubjectSelect.innerHTML = '';
+    for (var i = 0; i < gkState.wrongs.subjects.length; i++) {
+      var s = gkState.wrongs.subjects[i];
+      var op = document.createElement('option');
+      op.value = s.key;
+      op.textContent = s.name + '（' + s.total + ' 题）';
+      gkSubjectSelect.appendChild(op);
+    }
+    gkSubjectSelect.value = gkCurrentSubject;
+  }
+
+  function renderGkWords() {
+    if (!gkWordList) return;
+    gkWordList.innerHTML = '';
+    if (gkState.wordsErr || !gkState.words) {
+      gkWordList.appendChild(buildEmptyState('词表加载失败', gkState.wordsErr || '无法读取词表。'));
+      if (gkWordCount) gkWordCount.textContent = '—';
+      return;
+    }
+    var day = null;
+    for (var i = 0; i < gkState.words.days.length; i++) {
+      if (gkState.words.days[i].day === gkCurrentDay) day = gkState.words.days[i];
+    }
+    if (!day) {
+      gkWordList.appendChild(buildEmptyState('没有该天', '请选择其它天数。'));
+      return;
+    }
+    if (gkWordCount) gkWordCount.textContent = day.count + ' 词' + (day.range ? ' · ' + day.range : '');
+    if (gkQuizHint) {
+      gkQuizHint.textContent = gkQuizMode
+        ? '听写模式：中文已隐藏，写完后点「显示全部释义」核对。'
+        : '当前显示全部释义。点「开始听写」隐藏中文自测。';
+    }
+    if (gkStartQuiz) {
+      gkStartQuiz.textContent = gkQuizMode ? '退出听写' : '开始听写';
+    }
+
+    var ul = document.createElement('ul');
+    ul.className = 'gk-word-ul';
+    for (var k = 0; k < day.words.length; k++) {
+      ul.appendChild(buildGkWord(day.words[k]));
+    }
+    gkWordList.appendChild(ul);
+  }
+
+  function buildGkWord(w) {
+    var li = document.createElement('li');
+    li.className = 'gk-word-item';
+
+    var line = document.createElement('div');
+    line.className = 'gk-word-line';
+
+    var n = document.createElement('span');
+    n.className = 'gk-word-no';
+    n.textContent = w.no + '.';
+    line.appendChild(n);
+
+    var wd = document.createElement('span');
+    wd.className = 'gk-word-en';
+    wd.textContent = w.w;
+    line.appendChild(wd);
+
+    if (w.ph) {
+      var ph = document.createElement('span');
+      ph.className = 'gk-word-ph';
+      ph.textContent = '[' + w.ph + ']';
+      line.appendChild(ph);
+    }
+    if (w.pos) {
+      var ps = document.createElement('span');
+      ps.className = 'gk-word-pos';
+      ps.textContent = w.pos;
+      line.appendChild(ps);
+    }
+
+    var cn = document.createElement('span');
+    cn.className = 'gk-word-cn' + (gkQuizMode ? ' is-hidden' : '');
+    cn.textContent = gkQuizMode ? '____' : w.cn;
+    if (gkQuizMode) cn.setAttribute('aria-label', '释义已隐藏');
+    line.appendChild(cn);
+
+    li.appendChild(line);
+    return li;
+  }
+
+  /** 切换子页签 */
+  function switchGkTab(which) {
+    for (var i = 0; i < gkTabs.length; i++) {
+      var t = gkTabs[i];
+      var on = t.getAttribute('data-gk-tab') === which;
+      t.classList.toggle('is-current', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+    if (gkPanelWords) gkPanelWords.hidden = (which !== 'words');
+    if (gkPanelWrong) gkPanelWrong.hidden = (which !== 'wrong');
+  }
+
   /* -------------------------------------------------------- 页脚 ---- */
 
   function updateFooter() {
@@ -1453,7 +1791,7 @@
   function updateAboutVersion() {
     if (!aboutVersion) return;
     aboutVersion.textContent =
-      'app.js v1.1 · 设计依据 docs/design-v1.1.md · 当前视图 #/' + (currentView || DEFAULT_VIEW);
+      'app.js v1.2 · 设计依据 docs/design-v1.1.md · 当前视图 #/' + (currentView || DEFAULT_VIEW);
   }
 
   function refreshAll() {
@@ -1461,6 +1799,7 @@
     renderPanel();
     renderHome();
     renderFinance();
+    renderGaokao();
     updateFooter();
   }
 
@@ -1583,6 +1922,52 @@
     });
 
     window.addEventListener('hashchange', function () { route(true); });
+
+    /* ---- 高考总攻交互 ---- */
+    if (gkCheckinBtn) {
+      gkCheckinBtn.addEventListener('click', function () {
+        var today = todayKeyLocal();
+        if (gkProgress.checkins[today]) return;
+        gkProgress.checkins[today] = true;
+        var okSave = saveGkProgress();
+        renderGkCheckin();
+        if (!okSave) {
+          // localStorage 不可用时提示一次，但不阻断
+          if (gkStreak) {
+            gkStreak.textContent = '🔥 已记录本次签到（本机存储不可用，刷新后不保留）';
+          }
+        }
+      });
+    }
+    if (gkDaySelect) {
+      gkDaySelect.addEventListener('change', function () {
+        gkCurrentDay = Number(gkDaySelect.value) || 1;
+        renderGkWords();
+      });
+    }
+    if (gkStartQuiz) {
+      gkStartQuiz.addEventListener('click', function () {
+        gkQuizMode = !gkQuizMode;
+        renderGkWords();
+      });
+    }
+    if (gkShowAll) {
+      gkShowAll.addEventListener('click', function () {
+        gkQuizMode = false;
+        renderGkWords();
+      });
+    }
+    if (gkSubjectSelect) {
+      gkSubjectSelect.addEventListener('change', function () {
+        gkCurrentSubject = gkSubjectSelect.value || 'math';
+        renderGkWrongs();
+      });
+    }
+    for (var gi = 0; gi < gkTabs.length; gi++) {
+      gkTabs[gi].addEventListener('click', function (event) {
+        switchGkTab(event.currentTarget.getAttribute('data-gk-tab'));
+      });
+    }
 
     document.addEventListener('keydown', function (event) {
       var tag = event.target && event.target.tagName;

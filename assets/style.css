@@ -38,6 +38,10 @@
   --reserved: #6b7480;       /* 预留/占位板块 */
   --reserved-soft: #eef0f3;
 
+  /* ---- 高考总攻：学习维度 ---- */
+  --study: #7a3fd0;          /* 与理财绿、生活蓝区分 */
+  --study-soft: #f1e9fb;
+
   --radius: 10px;
   --radius-sm: 6px;
   --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
@@ -992,6 +996,152 @@ a { color: var(--accent); }
   .day-tri { border-left-width: 4px; border-right-width: 4px; border-bottom-width: 7px; }
   .day-mark-row { min-height: 8px; gap: 3px; }
   .mini-day { min-height: 28px; font-size: 12px; }
+}
+
+/* ==========================================================================
+   高考总攻（3500 词练习 / 错题工作台 / 每日签到）
+   设计取向：沿用平台既有卡片与圆角语言，主色用 --study 紫，与理财绿、生活蓝区分。
+   ========================================================================== */
+
+.gk-checkin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-top: 14px;
+  background: var(--study-soft);
+  border: 1px solid var(--study);
+  border-radius: var(--radius);
+}
+
+.gk-checkin-label { font-size: 15px; font-weight: 600; color: var(--study); }
+.gk-checkin-sub { margin-top: 2px; font-size: 13px; color: var(--text-muted); }
+.gk-streak { margin-top: 8px; font-size: 13px; color: var(--text-muted); }
+
+.gk-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gk-tab {
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+}
+
+.gk-tab.is-current {
+  color: var(--study);
+  font-weight: 600;
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.gk-panel { padding-top: 16px; }
+.gk-panel[hidden] { display: none; }
+
+.gk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.gk-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-muted); }
+.gk-field select {
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 200px;
+}
+
+.gk-count { font-size: 13px; color: var(--text-muted); }
+.gk-hint { margin-bottom: 12px; font-size: 13px; color: var(--text-muted); }
+
+/* ---- 3500 词 ---- */
+.gk-word-ul { list-style: none; padding: 0; margin: 0; }
+
+.gk-word-item {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--surface-alt);
+}
+
+.gk-word-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 14px; }
+.gk-word-no { min-width: 34px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.gk-word-en { font-weight: 600; color: var(--text); }
+.gk-word-ph { font-family: var(--font-mono); font-size: 12.5px; color: var(--study); }
+.gk-word-pos { font-size: 12px; color: var(--text-muted); }
+.gk-word-cn { color: var(--text); }
+
+.gk-word-cn.is-hidden {
+  min-width: 90px;
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border-strong);
+}
+
+/* ---- 错题 ---- */
+.gk-overview {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+}
+
+.gk-cluster {
+  margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.gk-cluster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--study-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+.gk-cluster-title { font-size: 14px; font-weight: 600; color: var(--study); }
+.gk-cluster-count { font-size: 12.5px; color: var(--text-muted); }
+
+.gk-question-list { list-style: none; padding: 0; margin: 0; }
+
+.gk-question { padding: 12px 14px; border-bottom: 1px solid var(--surface-alt); }
+.gk-question:last-child { border-bottom: none; }
+
+.gk-q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.gk-q-no { font-size: 13px; font-weight: 600; color: var(--study); }
+.gk-q-img { font-size: 11.5px; color: var(--text-muted); }
+
+.gk-q-row { display: flex; gap: 8px; margin-top: 4px; font-size: 13px; line-height: 1.6; }
+.gk-q-label { flex: 0 0 76px; color: var(--text-muted); }
+.gk-q-value { flex: 1 1 auto; min-width: 0; color: var(--text); word-break: break-word; }
+
+@media (max-width: 720px) {
+  .gk-checkin { flex-direction: column; align-items: stretch; gap: 10px; }
+  .gk-field select { min-width: 0; width: 100%; }
+  .gk-q-row { flex-direction: column; gap: 2px; }
+  .gk-q-label { flex: none; }
 }
 
 @media print {
